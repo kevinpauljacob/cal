@@ -1,6 +1,6 @@
 "use client";
-
 import { useState } from "react";
+import Pagination from "./Pagination";
 import { Search, X } from "lucide-react";
 
 interface Listing {
@@ -38,7 +38,10 @@ interface Project {
 }
 
 interface UpcomingLaunchesProps {
-  listings: Array<Listing>; // Using the updated Listing interface
+  listings: Array<Listing>;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
 interface TokenProjectTableProps {
@@ -151,7 +154,12 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
 
 const filterOptions = ["All", "AI", "Meme", "Gaming", "Political"];
 
-const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({ listings }) => {
+const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
+  listings,
+  currentPage,
+  totalPages,
+  onPageChange,
+}) => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -227,6 +235,12 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({ listings }) => {
         projects={projects}
         filter={activeFilter}
         searchQuery={searchQuery}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
       />
     </div>
   );

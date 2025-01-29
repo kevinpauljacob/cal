@@ -35,7 +35,10 @@ interface TrendingItem {
 }
 
 const MindSharePage: React.FC = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [treeMapListings, setTreeMapListings] = useState<Listing[]>([]);
+  const [tableListings, setTableListings] = useState<Listing[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [mindshareTimeframe, setMindshareTimeframe] = useState<"24h" | "7d">(
     "24h"
@@ -82,49 +85,76 @@ const MindSharePage: React.FC = () => {
   //     .slice(0, 10);
   // };
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/listings");
-        const data = await response.json();
-        console.log(data);
-        if (data.status === "success") {
-          setListings(data.data.listings);
-        }
-      } catch (error) {
-        console.error("Error fetching listings:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch data for TreeMap and Trending (first page only)
+  const fetchInitialListings = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/listings?page=1");
+      const data = await response.json();
 
-    fetchListings();
+      if (data.status === "success") {
+        setTreeMapListings(data.data.listings);
+        const trendingItems = calculateTrendingListings(
+          data.data.listings,
+          trendingTimeframe
+        );
+        setTrendingListings(trendingItems);
+      }
+    } catch (error) {
+      console.error("Error fetching initial listings:", error);
+    }
+  };
+
+  // Fetch paginated data for the table
+  const fetchTableListings = async (page: number) => {
+    try {
+      const response = await fetch(`/api/listings?page=${page}`);
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setTableListings(data.data.listings);
+        setTotalPages(data.data.pagination.pages);
+        setCurrentPage(page);
+      }
+    } catch (error) {
+      console.error("Error fetching table listings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchInitialListings();
+    fetchTableListings(1);
   }, []);
 
   useEffect(() => {
-    if (listings.length > 0) {
+    if (treeMapListings.length > 0) {
       const trendingItems = calculateTrendingListings(
-        listings,
+        treeMapListings,
         trendingTimeframe
       );
       setTrendingListings(trendingItems);
     }
-  }, [listings, trendingTimeframe]);
+  }, [treeMapListings, trendingTimeframe]);
+
+  const handlePageChange = (newPage: number) => {
+    fetchTableListings(newPage);
+  };
 
   // Calculate totals for tags
-  const totalListed = listings.length;
-  const categories = new Set(listings.map((l) => l.category)).size;
+  // const totalListed = listings.length;
 
   const tags = [
-    {
-      title: "Total Listed",
-      value: totalListed,
-      className: "bg-[#EFA411] text-[#EFA411]",
-    },
+    // {
+    //   title: "Total Listed",
+    //   value: totalListed,
+    //   className: "bg-[#EFA411] text-[#EFA411]",
+    // },
     {
       title: "Categories",
-      value: categories,
+      value: 4,
       className: "bg-[#4594FF] text-[#4594FF]",
     },
   ];
@@ -195,7 +225,7 @@ const MindSharePage: React.FC = () => {
                 </div>
               </div>
               <TreeMapComponent
-                listings={listings}
+                listings={treeMapListings}
                 timeFrame={mindshareTimeframe}
               />
             </div>
@@ -212,7 +242,7 @@ const MindSharePage: React.FC = () => {
                         onClick={() => {
                           if (option === "24h" || option === "7d") {
                             setTrendingTimeframe(option);
-                            calculateTrendingListings(listings, option);
+                            calculateTrendingListings(treeMapListings, option);
                           }
                         }}
                         className={`px-4 py-1 text-xs transition-colors duration-200 rounded-[10px] ${
@@ -264,7 +294,12 @@ const MindSharePage: React.FC = () => {
               </div>
             </div>
           </section>
-          <UpcomingLaunches listings={listings} />
+          <UpcomingLaunches
+            listings={tableListings}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       </main>
     </div>
