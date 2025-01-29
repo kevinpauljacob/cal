@@ -189,7 +189,7 @@ const MindSharePage: React.FC = () => {
               Get Listed
             </Link>
           </section>
-          <section className="flex items-center justify-between my-12">
+          <section className="flex items-center justify-between mt-12 mb-6 md:my-12">
             <div className="flex flex-col items-start justify-start font-lexend">
               <h1 className="text-white/80 text-2xl font-semibold">
                 Mindshare of Upcoming Launches
@@ -200,8 +200,8 @@ const MindSharePage: React.FC = () => {
               </p>
             </div>
           </section>
-          <section className="flex justify-between items-stretch gap-2 w-full">
-            <div className="bg-[#BEB6FF]/5 rounded-[10px] p-3 flex flex-col gap-3 w-[75%]">
+          <section className="flex flex-col sm:flex-row justify-between items-stretch gap-4 sm:gap-2 w-full">
+            <div className="bg-[#BEB6FF]/5 rounded-[10px] p-3 flex flex-col gap-3 w-full sm:w-[50%] md:w-[60%] lg:w-[75%]">
               <div className="flex items-center justify-between w-full">
                 <h1 className="text-xl text-white/50">MindShare</h1>
                 <div className="border-2 border-[#202329] rounded-[10px] p-1">
@@ -229,7 +229,7 @@ const MindSharePage: React.FC = () => {
                 timeFrame={mindshareTimeframe}
               />
             </div>
-            <div className="mx-auto bg-[#BEB6FF]/5 rounded-[10px] p-3 w-[25%]">
+            <div className="mx-auto bg-[#BEB6FF]/5 rounded-[10px] p-3 w-full sm:w-[50%] md:w-[40%] lg:w-[25%]">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-semibold text-white/50">
                   Trending

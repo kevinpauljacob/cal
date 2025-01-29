@@ -87,16 +87,24 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full">
+      <table className="w-full min-w-full table-fixed">
         <thead>
           <tr className="text-[10px] text-white/30 font-medium">
-            <th className="text-left py-4 px-6">Project</th>
-            <th className="text-left py-4 px-6">Category</th>
-            <th className="text-left py-4 px-6">Followers</th>
-            <th className="text-left py-4 px-6">MindShare Score</th>
-            <th className="text-left py-4 px-6">24h Change</th>
-            <th className="text-left py-4 px-6">Launch Date</th>
-            <th className="text-left py-4 px-6">Twitter</th>
+            <th className="w-[25%] text-left py-4 px-6">Project</th>
+            <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
+              Category
+            </th>
+            <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
+              Followers
+            </th>
+            <th className="w-[15%] text-left py-4 px-6">MindShare</th>
+            <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
+              24h Change
+            </th>
+            <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
+              Launch Date
+            </th>
+            <th className="w-[12%] text-left py-4 px-6">Twitter</th>
           </tr>
         </thead>
         <tbody>
@@ -115,7 +123,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                   <span className="text-white/75">{project.project}</span>
                 </div>
               </td>
-              <td className="py-4 px-6">
+              <td className="hidden sm:table-cell py-4 px-6">
                 <span
                   className={`px-3 py-1 rounded-full text-[10px] ${getCategoryStyle(
                     project.category
@@ -124,13 +132,13 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                   {project.category}
                 </span>
               </td>
-              <td className="py-4 px-6 text-white/50">
+              <td className="hidden sm:table-cell py-4 px-6 text-white/50">
                 {project.followers.toLocaleString()}
               </td>
               <td className="py-4 px-6 text-white/75">
                 {project.mindshareScore.toFixed(2)}
               </td>
-              <td className="py-4 px-6">
+              <td className="hidden sm:table-cell py-4 px-6">
                 <span
                   className={
                     project.mindshareChange >= 0
@@ -142,7 +150,9 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                   {project.mindshareChange.toFixed(2)}%
                 </span>
               </td>
-              <td className="py-4 px-6 text-white/50">{project.launchDate}</td>
+              <td className="hidden sm:table-cell py-4 px-6 text-white/50">
+                {project.launchDate}
+              </td>
               <td className="py-4 px-6 text-white/50">{project.twitter}</td>
             </tr>
           ))}
@@ -192,13 +202,13 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
         Upcoming Token Launches
       </h1>
 
-      <div className="flex justify-between items-center w-full">
-        <div className="flex gap-4">
+      <div className="flex flex-col-reverse sm:flex-row gap-4 justify-between items-center w-full">
+        <div className="flex flex-wrap gap-2 sm:gap-4">
           {filterOptions.map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-6 py-2 rounded-lg text-[13px] font-inter font-semibold transition-colors
+              className={`px-2 py-1 sm:px-6 sm:py-2 rounded-lg text-[13px] font-inter font-semibold transition-colors
         ${getCategoryStyle(filter)}
         ${
           activeFilter === filter
