@@ -67,19 +67,11 @@ const CustomCell = (props: any) => {
         height={height}
         fill={fillColor}
         fillOpacity={0.8}
-        stroke="#0C0D12"
+        stroke="#181924"
         strokeWidth={2}
       />
 
       <>
-        {/* Background circle for image */}
-        <circle
-          cx={x + padding + 8}
-          cy={y + padding + 8}
-          r={8}
-          fill="#0C0D12"
-        />
-        {/* Project image as a foreign object */}
         <foreignObject x={x + padding} y={y + padding} width={16} height={16}>
           <img
             src={profileImage}
@@ -89,21 +81,23 @@ const CustomCell = (props: any) => {
         </foreignObject>
         {/* Project name */}
         <text
-          x={x + padding + 24}
-          y={y + padding + 10}
-          fill="#000"
+          x={x + padding + 22}
+          y={y + padding + 12}
+          fill="#fff"
           fontSize={12}
-          className="font-light"
+          strokeWidth="0"
+          className="font-medium text-white"
         >
           {name}
         </text>
         {/* Mindshare score */}
         <text
           x={x + padding}
-          y={y + padding + 30}
-          fill="#000"
+          y={y + padding + 34}
+          fill="#fff"
           fontSize={12}
-          className="font-light"
+          strokeWidth="0"
+          className="font-medium text-white"
         >
           {score && score.toFixed(1)}%
         </text>
