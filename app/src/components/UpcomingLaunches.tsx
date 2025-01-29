@@ -3,16 +3,42 @@
 import { useState } from "react";
 import { Search, X } from "lucide-react";
 
+interface Listing {
+  twitterUsername: string;
+  screenName: string;
+  profileImageUrl: string;
+  bio: string;
+  followers: number;
+  category: "ai" | "gaming" | "meme" | "political";
+  launchDate: string;
+  engagementRate: number;
+  viewsCount: number;
+  tweetCount: number;
+  mindshare: {
+    "24h": {
+      score: number;
+      change: number;
+    };
+    "7d": {
+      score: number;
+      change: number;
+    };
+  };
+}
 interface Project {
-  id: string;
+  id?: string;
   profileImage: string;
   project: string;
-  mindshareScore: number; // Current mindshare score
-  mindshareChange: number; // 24h change in mindshare
+  mindshareScore: number;
+  mindshareChange: number;
   launchDate: string;
   twitter: string;
   category: string;
   followers: number;
+}
+
+interface UpcomingLaunchesProps {
+  listings: Array<Listing>; // Using the updated Listing interface
 }
 
 interface TokenProjectTableProps {
@@ -71,9 +97,9 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {filteredProjects.map((project) => (
+          {filteredProjects.map((project, index: number) => (
             <tr
-              key={project.id}
+              key={index}
               className="border-t border-white/5 text-[12px] font-medium"
             >
               <td className="py-4 px-6">
@@ -125,30 +151,11 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
 
 const filterOptions = ["All", "AI", "Meme", "Gaming", "Political"];
 
-interface UpcomingLaunchesProps {
-  listings: Array<{
-    _id: string;
-    twitterUsername: string;
-    screenName: string;
-    category: string;
-    launchDate: Date;
-    followers: number;
-    profileImageUrl: string;
-    mindShareHistory: Array<{
-      date: Date;
-      mindShareScore: number;
-    }>;
-    latestMindShare?: {
-      mindShareScore: number;
-    };
-  }>;
-}
-
 const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({ listings }) => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string) => {
     return new Date(date).toLocaleString("en-US", {
       hour: "numeric",
       minute: "2-digit",
@@ -160,42 +167,16 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({ listings }) => {
     });
   };
 
-  // Calculate 24h mindshare change
-  const calculateMindshareChange = (
-    mindShareHistory: Array<{ date: Date; mindShareScore: number }>
-  ) => {
-    if (!mindShareHistory || mindShareHistory.length < 2) return 0;
-
-    // Sort history by date descending
-    const sortedHistory = [...mindShareHistory].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-
-    const latestScore = sortedHistory[0].mindShareScore;
-    const previousScore = sortedHistory[1].mindShareScore;
-
-    // Calculate percentage change
-    return previousScore > 0
-      ? ((latestScore - previousScore) / previousScore) * 100
-      : 0;
-  };
-
-  const projects: Project[] = listings.map((listing) => {
-    const mindshareChange = calculateMindshareChange(listing.mindShareHistory);
-    const currentMindshare = listing.latestMindShare?.mindShareScore || 0;
-
-    return {
-      id: listing._id,
-      profileImage: listing.profileImageUrl,
-      project: listing.screenName,
-      mindshareScore: currentMindshare,
-      mindshareChange: mindshareChange,
-      launchDate: formatDate(new Date(listing.launchDate)),
-      twitter: `@${listing.twitterUsername}`,
-      category: listing.category[0].toUpperCase() + listing.category.slice(1),
-      followers: listing.followers,
-    };
-  });
+  const projects: Project[] = listings.map((listing) => ({
+    profileImage: listing.profileImageUrl,
+    project: listing.screenName,
+    mindshareScore: listing.mindshare["24h"].score,
+    mindshareChange: listing.mindshare["24h"].change,
+    launchDate: formatDate(listing.launchDate),
+    twitter: `@${listing.twitterUsername}`,
+    category: listing.category[0].toUpperCase() + listing.category.slice(1),
+    followers: listing.followers,
+  }));
 
   return (
     <div className="w-full py-8 space-y-6">

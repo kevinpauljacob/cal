@@ -1,23 +1,24 @@
 import React from "react";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
 
-interface MindShare {
-  twitterUsername: string;
-  date: Date;
-  engagementRate: number;
-  viewsCount: number;
-  mindShareScore: number;
-  tweetCount: number;
-}
-
 interface Listing {
-  _id: string;
   twitterUsername: string;
   screenName: string;
   profileImageUrl: string;
   category: "ai" | "gaming" | "meme" | "political";
-  mindShareHistory: MindShare[];
-  latestMindShare: MindShare | null;
+  engagementRate: number;
+  viewsCount: number;
+  tweetCount: number;
+  mindshare: {
+    "24h": {
+      score: number;
+      change: number;
+    };
+    "7d": {
+      score: number;
+      change: number;
+    };
+  };
 }
 
 interface TreeMapComponentProps {
@@ -25,56 +26,14 @@ interface TreeMapComponentProps {
   timeFrame: "24h" | "7d";
 }
 
-const getCategoryColor = (category: string) => {
-  switch (category) {
-    case "ai":
-      return "#BF5AF2";
-    case "gaming":
-      return "#32D74B";
-    case "meme":
-      return "#FF9F0A";
-    case "political":
-      return "#0A84FF";
-    default:
-      return "#15151F";
-  }
-};
-
 const transformData = (listings: Listing[], timeFrame: "24h" | "7d") => {
-  const now = new Date();
-  const timeLimit = new Date(now);
-
-  if (timeFrame === "24h") {
-    timeLimit.setHours(now.getHours() - 24);
-  } else {
-    timeLimit.setDate(now.getDate() - 7);
-  }
-
   const validListings = listings
-    .map((listing) => {
-      const relevantHistory = listing.mindShareHistory.filter(
-        (history) => new Date(history.date) >= timeLimit
-      );
-
-      if (relevantHistory.length === 0) return null;
-
-      const avgMindShareScore =
-        relevantHistory.reduce(
-          (sum, history) => sum + history.mindShareScore,
-          0
-        ) / relevantHistory.length;
-
-      return {
-        ...listing,
-        averageScore: avgMindShareScore,
-        latestStats: relevantHistory[0] || null,
-      };
-    })
-    .filter(
-      (listing): listing is NonNullable<typeof listing> =>
-        listing !== null && listing.averageScore > 0
-    )
-    .sort((a, b) => b.averageScore - a.averageScore)
+    .map((listing) => ({
+      ...listing,
+      score: listing.mindshare[timeFrame].score,
+    }))
+    .filter((listing) => listing.score > 0)
+    .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
   return [
@@ -82,21 +41,21 @@ const transformData = (listings: Listing[], timeFrame: "24h" | "7d") => {
       name: "Projects",
       children: validListings.map((listing) => ({
         name: listing.screenName,
-        size: listing.averageScore,
+        size: listing.score,
         category: listing.category,
         profileImage: listing.profileImageUrl,
-        views: listing.latestStats?.viewsCount.toLocaleString() || "0",
-        engagement: `${(listing.latestStats?.engagementRate || 0).toFixed(2)}%`,
-        tweets: listing.latestStats?.tweetCount || 0,
-        score: listing.averageScore,
+        views: listing.viewsCount.toLocaleString(),
+        engagement: `${listing.engagementRate.toFixed(2)}%`,
+        tweets: listing.tweetCount,
+        score: listing.score,
       })),
     },
   ];
 };
 
 const CustomCell = (props: any) => {
-  const { x, y, width, height, name, category, score, profileImage } = props;
-  const fillColor = getCategoryColor(category);
+  const { x, y, width, height, name, score, profileImage } = props;
+  const fillColor = "#00A071";
   const padding = 8;
 
   return (
@@ -192,7 +151,7 @@ const TreeMapComponent: React.FC<TreeMapComponentProps> = ({
         <Treemap
           data={chartData}
           dataKey="size"
-          aspectRatio={4 / 3}
+          aspectRatio={8 / 7}
           stroke="#0C0D12"
           content={<CustomCell />}
           isAnimationActive={false}

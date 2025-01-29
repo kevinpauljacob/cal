@@ -5,25 +5,26 @@ import UpcomingLaunches from "@/components/UpcomingLaunches";
 import Link from "next/link";
 
 interface Listing {
-  _id: string;
   twitterUsername: string;
   screenName: string;
   profileImageUrl: string;
   bio: string;
   followers: number;
   category: "ai" | "gaming" | "meme" | "political";
-  launchDate: Date;
-  mindShareHistory: MindShare[];
-  latestMindShare: MindShare;
-}
-
-interface MindShare {
-  twitterUsername: string;
-  date: Date;
+  launchDate: string;
   engagementRate: number;
   viewsCount: number;
-  mindShareScore: number;
   tweetCount: number;
+  mindshare: {
+    "24h": {
+      score: number;
+      change: number;
+    };
+    "7d": {
+      score: number;
+      change: number;
+    };
+  };
 }
 
 interface TrendingItem {
@@ -44,66 +45,42 @@ const MindSharePage: React.FC = () => {
   );
   const [trendingListings, setTrendingListings] = useState<TrendingItem[]>([]);
 
+  // only positive
   const calculateTrendingListings = (
     listings: Listing[],
     timeframe: "24h" | "7d"
   ) => {
-    const now = new Date();
-    const timeframeInMs =
-      timeframe === "24h" ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
-    const cutoffDate = new Date(now.getTime() - timeframeInMs);
-
     return listings
       .map((listing) => {
-        // Get the history entries within the timeframe
-        const relevantHistory = listing.mindShareHistory
-          .filter((entry) => new Date(entry.date) >= cutoffDate)
-          .sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
-
-        if (relevantHistory.length < 2) return null;
-
-        // Get the most recent score
-        const latestScore = relevantHistory[0].mindShareScore;
-
-        // Get the oldest score within the timeframe
-        const previousScore =
-          relevantHistory[relevantHistory.length - 1].mindShareScore;
-
-        const percentageIncrease =
-          previousScore > 0
-            ? ((latestScore - previousScore) / previousScore) * 100
-            : 0;
-
+        const change = listing.mindshare[timeframe].change;
         return {
           name: listing.screenName,
-          percentage: percentageIncrease,
-          iconBg: getBgColorForCategory(listing.category),
+          percentage: change,
+          iconBg: "#00A071",
           avatar: listing.profileImageUrl,
         };
       })
-      .filter(
-        (item): item is TrendingItem => item !== null && item.percentage > 0
-      )
+      .filter((item): item is TrendingItem => item.percentage > 0)
       .sort((a, b) => b.percentage - a.percentage)
-      .slice(0, 10); // Limit to top 10 trending items
+      .slice(0, 10);
   };
 
-  const getBgColorForCategory = (category: string) => {
-    switch (category) {
-      case "ai":
-        return "bg-gradient-to-r from-purple-500 to-pink-500";
-      case "gaming":
-        return "bg-emerald-500";
-      case "meme":
-        return "bg-orange-500";
-      case "political":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
+  // both positive and negative
+  // const calculateTrendingListings = ( listings: Listing[],
+  //  timeframe: "24h" | "7d") => {
+  //   return listings
+  //     .map((listing) => {
+  //       const change = listing.mindshare[timeframe].change;
+  //       return {
+  //         name: listing.screenName,
+  //         percentage: change,
+  //         iconBg: "#00A071",
+  //         avatar: listing.profileImageUrl,
+  //       };
+  //     })
+  //     .sort((a, b) => Math.abs(b.percentage) - Math.abs(a.percentage)) // Sort by absolute value
+  //     .slice(0, 10);
+  // };
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -111,7 +88,7 @@ const MindSharePage: React.FC = () => {
         setLoading(true);
         const response = await fetch("/api/listings");
         const data = await response.json();
-
+        console.log(data);
         if (data.status === "success") {
           setListings(data.data.listings);
         }

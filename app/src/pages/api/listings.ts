@@ -23,15 +23,17 @@ export default async function handler(
 
     const totalListings = await Listing.countDocuments();
 
-    // Calculate the date 7 days ago
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Calculate reference dates
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    // Fetch listings with their mindshare data
     const listings = await Listing.aggregate([
       {
         $lookup: {
-          from: "mindshares", // Make sure this matches your collection name
+          from: "mindshares",
           let: { username: "$twitterUsername" },
           pipeline: [
             {
@@ -39,7 +41,7 @@ export default async function handler(
                 $expr: {
                   $and: [
                     { $eq: ["$twitterUsername", "$$username"] },
-                    { $gte: ["$date", sevenDaysAgo] }, // Direct date comparison since field is already a Date
+                    { $gte: ["$date", fourteenDaysAgo] },
                   ],
                 },
               },
@@ -53,18 +55,114 @@ export default async function handler(
       },
       {
         $addFields: {
-          latestMindShare: {
-            $cond: {
-              if: { $gt: [{ $size: "$mindShareHistory" }, 0] },
-              then: { $arrayElemAt: ["$mindShareHistory", 0] },
-              else: null,
+          // Latest metrics
+          latestMetrics: {
+            $arrayElemAt: ["$mindShareHistory", 0],
+          },
+          // 24h ago metrics
+          twentyFourHoursAgoMetrics: {
+            $filter: {
+              input: "$mindShareHistory",
+              as: "item",
+              cond: {
+                $and: [
+                  { $gte: ["$$item.date", twentyFourHoursAgo] },
+                  { $lt: ["$$item.date", now] },
+                ],
+              },
+            },
+          },
+          // Previous 24h metrics (for change calculation)
+          previousTwentyFourHoursMetrics: {
+            $filter: {
+              input: "$mindShareHistory",
+              as: "item",
+              cond: {
+                $and: [
+                  { $gte: ["$$item.date", fortyEightHoursAgo] },
+                  { $lt: ["$$item.date", twentyFourHoursAgo] },
+                ],
+              },
+            },
+          },
+          // 7d metrics
+          sevenDayMetrics: {
+            $filter: {
+              input: "$mindShareHistory",
+              as: "item",
+              cond: {
+                $and: [
+                  { $gte: ["$$item.date", sevenDaysAgo] },
+                  { $lt: ["$$item.date", now] },
+                ],
+              },
+            },
+          },
+          // Previous 7d metrics (for change calculation)
+          previousSevenDayMetrics: {
+            $filter: {
+              input: "$mindShareHistory",
+              as: "item",
+              cond: {
+                $and: [
+                  { $gte: ["$$item.date", fourteenDaysAgo] },
+                  { $lt: ["$$item.date", sevenDaysAgo] },
+                ],
+              },
             },
           },
         },
       },
       {
+        $addFields: {
+          mindshare: {
+            "24h": {
+              score: {
+                $avg: "$twentyFourHoursAgoMetrics.mindShareScore",
+              },
+              change: {
+                $subtract: [
+                  { $avg: "$twentyFourHoursAgoMetrics.mindShareScore" },
+                  { $avg: "$previousTwentyFourHoursMetrics.mindShareScore" },
+                ],
+              },
+            },
+            "7d": {
+              score: {
+                $avg: "$sevenDayMetrics.mindShareScore",
+              },
+              change: {
+                $subtract: [
+                  { $avg: "$sevenDayMetrics.mindShareScore" },
+                  { $avg: "$previousSevenDayMetrics.mindShareScore" },
+                ],
+              },
+            },
+          },
+          engagementRate: "$latestMetrics.engagementRate",
+          viewsCount: "$latestMetrics.viewsCount",
+          tweetCount: "$latestMetrics.tweetCount",
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          twitterUsername: 1,
+          screenName: 1,
+          profileImageUrl: 1,
+          bio: 1,
+          followers: 1,
+          category: 1,
+          launchDate: 1,
+          engagementRate: 1,
+          viewsCount: 1,
+          tweetCount: 1,
+          mindshare: 1,
+        },
+      },
+      {
         $sort: {
-          createdAt: -1,
+          "mindshare.24h.score": -1,
         },
       },
       {
@@ -74,9 +172,6 @@ export default async function handler(
         $limit: pageSize,
       },
     ]);
-
-    // Add a debug log to check the MongoDB query results
-    console.log("Fetched listings:", JSON.stringify(listings, null, 2));
 
     if (!listings.length && page > 1) {
       return res.status(404).json({
@@ -100,7 +195,6 @@ export default async function handler(
     });
   } catch (error) {
     console.error("Error fetching listings:", error);
-
     res.status(500).json({
       status: "error",
       code: "FETCH_ERROR",
