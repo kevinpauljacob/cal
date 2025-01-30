@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Pagination from "./Pagination";
 import { Search, X } from "lucide-react";
+import useDebounce from "../utils/hooks";
 
 interface Listing {
   twitterUsername: string;
@@ -43,6 +44,10 @@ interface UpcomingLaunchesProps {
   totalPages: number;
   loading: boolean;
   onPageChange: (page: number) => void;
+  onSearchResults: (
+    results: Listing[],
+    pagination: { currentPage: number; totalPages: number }
+  ) => void;
 }
 
 interface TokenProjectTableProps {
@@ -181,9 +186,11 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
   totalPages,
   loading,
   onPageChange,
+  onSearchResults,
 }) => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString("en-US", {
@@ -207,6 +214,31 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
     category: listing.category[0].toUpperCase() + listing.category.slice(1),
     followers: listing.followers,
   }));
+
+  useEffect(() => {
+    if (debouncedSearchQuery) {
+      fetchSearchResults(debouncedSearchQuery, 1);
+    } else {
+      // If search query is empty, fetch normal listings
+      onPageChange(1);
+    }
+  }, [debouncedSearchQuery]);
+
+  const fetchSearchResults = async (query: string, page: number) => {
+    try {
+      const response = await fetch(`/api/search?q=${query}&page=${page}`);
+      const data = await response.json();
+
+      if (data.status === "success") {
+        onSearchResults(data.data.listings, {
+          currentPage: page,
+          totalPages: data.data.pagination.pages,
+        });
+      }
+    } catch (error) {
+      console.error("Error searching listings:", error);
+    }
+  };
 
   return (
     <div className="w-full py-8 space-y-6">

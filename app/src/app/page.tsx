@@ -143,6 +143,15 @@ const MindSharePage: React.FC = () => {
     fetchTableListings(newPage);
   };
 
+  const handleSearchResults = (
+    searchResults: Listing[],
+    pagination: { currentPage: number; totalPages: number }
+  ) => {
+    setTableListings(searchResults);
+    setCurrentPage(pagination.currentPage);
+    setTotalPages(pagination.totalPages);
+  };
+
   // Calculate totals for tags
   // const totalListed = listings.length;
 
@@ -313,6 +322,7 @@ const MindSharePage: React.FC = () => {
             totalPages={totalPages}
             loading={loading}
             onPageChange={handlePageChange}
+            onSearchResults={handleSearchResults}
           />
         </div>
       </main>
