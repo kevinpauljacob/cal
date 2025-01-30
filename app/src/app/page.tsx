@@ -91,7 +91,7 @@ const MindSharePage: React.FC = () => {
       setLoading(true);
       const response = await fetch("/api/listings?page=1");
       const data = await response.json();
-
+      console.log(data);
       if (data.status === "success") {
         setTreeMapListings(data.data.listings);
         const trendingItems = calculateTrendingListings(

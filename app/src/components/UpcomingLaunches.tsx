@@ -136,7 +136,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                 {project.followers.toLocaleString()}
               </td>
               <td className="py-4 px-6 text-white/75">
-                {project.mindshareScore.toFixed(2)}
+                {project.mindshareScore && project.mindshareScore.toFixed(2)}
               </td>
               <td className="hidden sm:table-cell py-4 px-6">
                 <span
@@ -147,7 +147,9 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                   }
                 >
                   {project.mindshareChange > 0 ? "+" : ""}
-                  {project.mindshareChange.toFixed(2)}%
+                  {project.mindshareChange &&
+                    project.mindshareChange.toFixed(2)}
+                  %
                 </span>
               </td>
               <td className="hidden sm:table-cell py-4 px-6 text-white/50">

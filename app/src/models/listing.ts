@@ -5,7 +5,7 @@ const ListingSchema = new mongoose.Schema({
   screenName: { type: String, required: true },
   profileImageUrl: { type: String, required: true },
   bio: { type: String, required: true },
-  followers: { type: Number, required: true },
+  followers: { type: Number, required: true, default: 0 },
   category: {
     type: String,
     required: true,

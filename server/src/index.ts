@@ -1,5 +1,6 @@
 import { Listing } from "./models/listing";
 import { MindShare } from "./models/mindshare";
+import connectToDatabase from "./utils/database";
 import { config } from "dotenv";
 config();
 
@@ -25,93 +26,152 @@ interface TwitterResponse {
 }
 
 export async function main() {
-  const listings = await Listing.find({});
+  try {
+    await connectToDatabase();
+    console.log("Database connection established successfully");
+    const listings = await Listing.find({});
+    console.log(`Found ${listings.length} listings to process`);
 
-  for (const listing of listings) {
-    try {
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const formattedDate = yesterday.toISOString().split(".")[0] + "_UTC";
+    for (const listing of listings) {
+      console.log(`\n----------------------------------------`);
+      console.log(`Processing Twitter user: ${listing.twitterUsername}`);
+      try {
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const formattedDate = yesterday.toISOString().split(".")[0] + "_UTC";
 
-      const query = `from:${listing.twitterUsername} since:${formattedDate}`;
+        const query = `from:${listing.twitterUsername} since:${formattedDate}`;
 
-      let allTweets: Tweet[] = [];
-      let cursor = "";
-      let hasNextPage = true;
+        let allTweets: Tweet[] = [];
+        let cursor = "";
+        let hasNextPage = true;
+        let pageCount = 0;
 
-      while (hasNextPage) {
-        const url = new URL(
-          "https://api.twitterapi.io/twitter/tweet/advanced_search"
-        );
-        url.searchParams.append("query", query);
-        url.searchParams.append("queryType", "Latest");
-        if (cursor) url.searchParams.append("cursor", cursor);
+        while (hasNextPage) {
+          pageCount++;
+          console.log(`\nFetching page ${pageCount} of tweets...`);
 
-        const tweetsResponse = await fetch(url.toString(), {
-          headers: {
-            "X-API-Key": process.env.X_API_KEY!,
-          },
-        });
-
-        if (!tweetsResponse.ok) {
-          console.error(
-            `Failed to fetch tweets for ${listing.twitterUsername}`
+          const url = new URL(
+            "https://api.twitterapi.io/twitter/tweet/advanced_search"
           );
-          break;
+          url.searchParams.append("query", query);
+          url.searchParams.append("queryType", "Latest");
+          if (cursor) url.searchParams.append("cursor", cursor);
+
+          console.log(`Making API request to: ${url.toString()}`);
+
+          const tweetsResponse = await fetch(url.toString(), {
+            method: "GET",
+            headers: {
+              "X-API-Key": process.env.X_API_KEY!,
+            },
+          });
+
+          if (!tweetsResponse.ok) {
+            console.error(
+              `Failed to fetch tweets for ${listing.twitterUsername}`
+            );
+            break;
+          }
+
+          const tweetsData: TwitterResponse = await tweetsResponse.json();
+          console.log(
+            `Received ${tweetsData.tweets.length} tweets in this page`
+          );
+
+          const recentTweets = tweetsData.tweets.filter((tweet) => {
+            const tweetDate = new Date(tweet.createdAt);
+            return tweetDate >= yesterday;
+          });
+
+          allTweets = [...allTweets, ...tweetsData.tweets];
+
+          if (recentTweets.length === 0) {
+            console.log(`Total tweets collected so far: ${allTweets.length}`);
+            console.log("No more recent tweets found, stopping pagination");
+            hasNextPage = false;
+          } else {
+            hasNextPage = tweetsData.has_next_page;
+            cursor = tweetsData.next_cursor;
+            console.log(`Has next page: ${hasNextPage}`);
+          }
         }
 
-        const tweetsData: TwitterResponse = await tweetsResponse.json();
-        allTweets = [...allTweets, ...tweetsData.tweets];
+        if (allTweets.length === 0) {
+          console.log(
+            `No tweets found in the last 24 hours for ${listing.twitterUsername}`
+          );
+          continue;
+        }
 
-        hasNextPage = tweetsData.has_next_page;
-        cursor = tweetsData.next_cursor;
-      }
+        const followersCount = allTweets[0]?.author.followers;
+        console.log(`\nCalculating metrics for ${allTweets.length} tweets`);
+        console.log(`Current follower count: ${followersCount}`);
 
-      const followersCount = allTweets[0]?.author.followers;
-
-      // Updated engagement calculation to include bookmarks and quotes
-      const totalEngagement = allTweets.reduce((sum: number, tweet: Tweet) => {
-        return (
-          sum +
-          tweet.likeCount +
-          tweet.retweetCount +
-          tweet.replyCount +
-          tweet.bookmarkCount +
-          tweet.quoteCount
+        // Updated engagement calculation to include bookmarks and quotes
+        const totalEngagement = allTweets.reduce(
+          (sum: number, tweet: Tweet) => {
+            return (
+              sum +
+              tweet.likeCount +
+              tweet.retweetCount +
+              tweet.replyCount +
+              tweet.bookmarkCount +
+              tweet.quoteCount
+            );
+          },
+          0
         );
-      }, 0);
 
-      const totalViews = allTweets.reduce((sum: number, tweet: Tweet) => {
-        return sum + tweet.viewCount;
-      }, 0);
+        const totalViews = allTweets.reduce((sum: number, tweet: Tweet) => {
+          return sum + tweet.viewCount;
+        }, 0);
 
-      const mindShareScore =
-        totalViews > 0 ? (totalEngagement / totalViews) * 100 : 0;
+        const mindShareScore =
+          totalViews > 0 ? (totalEngagement / totalViews) * 100 : 0;
 
-      const mindShare = new MindShare({
-        twitterUsername: listing.twitterUsername,
-        date: new Date(),
-        engagementRate:
-          allTweets.length > 0 ? totalEngagement / allTweets.length : 0,
-        viewsCount: totalViews,
-        mindShareScore,
-        tweetCount: allTweets.length,
-      });
+        console.log(`Metrics calculated:`);
+        console.log(`- Total engagement: ${totalEngagement}`);
+        console.log(`- Total views: ${totalViews}`);
+        console.log(`- Mind share score: ${mindShareScore.toFixed(2)}%`);
+        console.log(`- Tweet count: ${allTweets.length}`);
 
-      await mindShare.save();
-
-      if (followersCount) {
-        await Listing.findByIdAndUpdate(listing._id, {
-          followers: followersCount,
-          lastUpdated: new Date(),
+        const mindShare = new MindShare({
+          twitterUsername: listing.twitterUsername,
+          date: new Date(),
+          engagementRate:
+            allTweets.length > 0 ? totalEngagement / allTweets.length : 0,
+          viewsCount: totalViews,
+          mindShareScore,
+          tweetCount: allTweets.length,
         });
+
+        await mindShare.save();
+        console.log("Mind share data saved successfully");
+
+        if (followersCount) {
+          await Listing.findByIdAndUpdate(listing._id, {
+            followers: followersCount,
+            lastUpdated: new Date(),
+          });
+          console.log("Listing updated successfully");
+        }
+      } catch (error) {
+        console.error(
+          `Error processing ${listing.twitterUsername}:`,
+          error instanceof Error ? error.message : error
+        );
+        continue;
       }
-    } catch (error) {
-      console.error(
-        `Error updating mindshare for ${listing.twitterUsername}:`,
-        error
-      );
-      continue;
     }
+
+    console.log("\nScript execution completed successfully");
+    process.exit(0);
+  } catch (error) {
+    console.error(
+      "Fatal error occurred:",
+      error instanceof Error ? error.message : error
+    );
+    process.exit(1);
   }
 }
 
