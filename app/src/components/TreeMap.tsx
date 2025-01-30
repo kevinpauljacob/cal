@@ -24,7 +24,25 @@ interface Listing {
 interface TreeMapComponentProps {
   listings: Listing[];
   timeFrame: "24h" | "7d";
+  loading: boolean;
 }
+
+const TreeMapSkeleton = () => {
+  return (
+    <div className="w-full h-[400px] grid grid-cols-3 gap-0.5 bg-[#0C0D12]/50">
+      {Array(6)
+        .fill(0)
+        .map((_, i) => (
+          <div
+            key={i}
+            className={`bg-white/5 animate-pulse ${
+              i === 0 ? "col-span-2 row-span-2" : ""
+            }`}
+          />
+        ))}
+    </div>
+  );
+};
 
 const transformData = (listings: Listing[], timeFrame: "24h" | "7d") => {
   const validListings = listings
@@ -136,8 +154,13 @@ const CustomTooltip = ({ active, payload }: any) => {
 const TreeMapComponent: React.FC<TreeMapComponentProps> = ({
   listings,
   timeFrame,
+  loading,
 }) => {
   const chartData = transformData(listings, timeFrame);
+
+  if (loading) {
+    return <TreeMapSkeleton />;
+  }
 
   return (
     <div className="w-full h-[400px]">

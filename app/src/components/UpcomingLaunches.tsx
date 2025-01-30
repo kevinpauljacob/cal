@@ -41,6 +41,7 @@ interface UpcomingLaunchesProps {
   listings: Array<Listing>;
   currentPage: number;
   totalPages: number;
+  loading: boolean;
   onPageChange: (page: number) => void;
 }
 
@@ -48,6 +49,7 @@ interface TokenProjectTableProps {
   projects: Project[];
   filter: string;
   searchQuery: string;
+  loading: boolean;
 }
 
 const getCategoryStyle = (category: string) => {
@@ -69,6 +71,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   projects,
   filter,
   searchQuery,
+  loading,
 }) => {
   // Sort projects by mindshare score
   const sortedProjects = [...projects].sort(
@@ -108,56 +111,62 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {filteredProjects.map((project, index: number) => (
-            <tr
-              key={index}
-              className="border-t border-white/5 text-[12px] font-medium"
-            >
-              <td className="py-4 px-6">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={project.profileImage}
-                    alt={project.project}
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <span className="text-white/75">{project.project}</span>
-                </div>
-              </td>
-              <td className="hidden sm:table-cell py-4 px-6">
-                <span
-                  className={`px-3 py-1 rounded-full text-[10px] ${getCategoryStyle(
-                    project.category
-                  )}`}
-                >
-                  {project.category}
-                </span>
-              </td>
-              <td className="hidden sm:table-cell py-4 px-6 text-white/50">
-                {project.followers.toLocaleString()}
-              </td>
-              <td className="py-4 px-6 text-white/75">
-                {project.mindshareScore && project.mindshareScore.toFixed(2)}
-              </td>
-              <td className="hidden sm:table-cell py-4 px-6">
-                <span
-                  className={
-                    project.mindshareChange >= 0
-                      ? "text-emerald-500"
-                      : "text-red-500"
-                  }
-                >
-                  {project.mindshareChange > 0 ? "+" : ""}
-                  {project.mindshareChange &&
-                    project.mindshareChange.toFixed(2)}
-                  %
-                </span>
-              </td>
-              <td className="hidden sm:table-cell py-4 px-6 text-white/50">
-                {project.launchDate}
-              </td>
-              <td className="py-4 px-6 text-white/50">{project.twitter}</td>
+          {loading ? (
+            <tr className="border-t border-white/5 text-[12px] font-medium">
+              <td className="py-4 px-6">Loading..</td>
             </tr>
-          ))}
+          ) : (
+            filteredProjects.map((project, index: number) => (
+              <tr
+                key={index}
+                className="border-t border-white/5 text-[12px] font-medium"
+              >
+                <td className="py-4 px-6">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={project.profileImage}
+                      alt={project.project}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <span className="text-white/75">{project.project}</span>
+                  </div>
+                </td>
+                <td className="hidden sm:table-cell py-4 px-6">
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] ${getCategoryStyle(
+                      project.category
+                    )}`}
+                  >
+                    {project.category}
+                  </span>
+                </td>
+                <td className="hidden sm:table-cell py-4 px-6 text-white/50">
+                  {project.followers.toLocaleString()}
+                </td>
+                <td className="py-4 px-6 text-white/75">
+                  {project.mindshareScore && project.mindshareScore.toFixed(2)}
+                </td>
+                <td className="hidden sm:table-cell py-4 px-6">
+                  <span
+                    className={
+                      project.mindshareChange >= 0
+                        ? "text-emerald-500"
+                        : "text-red-500"
+                    }
+                  >
+                    {project.mindshareChange > 0 ? "+" : ""}
+                    {project.mindshareChange &&
+                      project.mindshareChange.toFixed(2)}
+                    %
+                  </span>
+                </td>
+                <td className="hidden sm:table-cell py-4 px-6 text-white/50">
+                  {project.launchDate}
+                </td>
+                <td className="py-4 px-6 text-white/50">{project.twitter}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
@@ -170,6 +179,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
   listings,
   currentPage,
   totalPages,
+  loading,
   onPageChange,
 }) => {
   const [activeFilter, setActiveFilter] = useState("All");
@@ -243,10 +253,12 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
           </div>
         </div>
       </div>
+
       <TokenProjectTable
         projects={projects}
         filter={activeFilter}
         searchQuery={searchQuery}
+        loading={loading}
       />
 
       <Pagination

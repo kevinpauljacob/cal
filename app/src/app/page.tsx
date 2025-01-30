@@ -159,14 +159,6 @@ const MindSharePage: React.FC = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0C0D12] p-6 flex items-center justify-center">
-        <div className="text-white/50">Loading...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0C0D12] p-6 ">
       <main className="font-lexend">
@@ -227,6 +219,7 @@ const MindSharePage: React.FC = () => {
               <TreeMapComponent
                 listings={treeMapListings}
                 timeFrame={mindshareTimeframe}
+                loading={loading}
               />
             </div>
             <div className="mx-auto bg-[#BEB6FF]/5 rounded-[10px] p-3 w-full sm:w-[50%] md:w-[40%] lg:w-[25%]">
@@ -259,37 +252,57 @@ const MindSharePage: React.FC = () => {
               </div>
 
               <div className="">
-                {trendingListings.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between px-3 py-4 transition-colors border-b-[1px] border-white border-opacity-[2.5%]"
-                  >
-                    <div className="flex items-center gap-3 text-sm font-akshar">
-                      <img
-                        src={item.avatar}
-                        alt={item.name}
-                        className={`w-[26px] h-[26px] rounded-full ${item.iconBg}`}
-                      />
-                      <span className="text-white/50 font-medium">
-                        {item.name}
-                      </span>
-                    </div>
-                    <span
-                      className={`font-roboto font-bold text-sm ${
-                        item.percentage > 0
-                          ? "text-[#00a071]/90"
-                          : "text-red-500/90"
-                      }`}
-                    >
-                      {item.percentage > 0 ? "+" : ""}
-                      {item.percentage.toFixed(1)}%
-                    </span>
-                  </div>
-                ))}
-                {trendingListings.length === 0 && (
-                  <div className="text-white/50 text-center py-4">
-                    No trending projects yet
-                  </div>
+                {loading ? (
+                  // Loading skeleton UI
+                  Array(7)
+                    .fill(0)
+                    .map((_, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between px-3 py-4 border-b-[1px] border-white border-opacity-[2.5%]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-[26px] h-[26px] rounded-full bg-white/5 animate-pulse" />
+                          <div className="w-24 h-4 bg-white/5 rounded animate-pulse" />
+                        </div>
+                        <div className="w-12 h-4 bg-white/5 rounded animate-pulse" />
+                      </div>
+                    ))
+                ) : (
+                  <>
+                    {trendingListings.slice(0, 7).map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between px-3 py-4 transition-colors border-b-[1px] border-white border-opacity-[2.5%]"
+                      >
+                        <div className="flex items-center gap-3 text-sm font-akshar">
+                          <img
+                            src={item.avatar}
+                            alt={item.name}
+                            className={`w-[26px] h-[26px] rounded-full ${item.iconBg}`}
+                          />
+                          <span className="text-white/50 font-medium">
+                            {item.name}
+                          </span>
+                        </div>
+                        <span
+                          className={`font-roboto font-bold text-sm ${
+                            item.percentage > 0
+                              ? "text-[#00a071]/90"
+                              : "text-red-500/90"
+                          }`}
+                        >
+                          {item.percentage > 0 ? "+" : ""}
+                          {item.percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    ))}
+                    {trendingListings.length === 0 && (
+                      <div className="text-white/50 text-center py-4">
+                        No trending projects yet
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -298,6 +311,7 @@ const MindSharePage: React.FC = () => {
             listings={tableListings}
             currentPage={currentPage}
             totalPages={totalPages}
+            loading={loading}
             onPageChange={handlePageChange}
           />
         </div>
