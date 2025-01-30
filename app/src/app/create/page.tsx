@@ -7,6 +7,7 @@ import { FaTwitter, FaCheckCircle } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
 import { Loader } from "@/components/Loader";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export type FormValues = {
   twitter: string;
@@ -22,8 +23,8 @@ const categories = [
 ];
 
 const CreateMindSharePage: React.FC = () => {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [username, setUserName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const {
     register,
@@ -39,22 +40,19 @@ const CreateMindSharePage: React.FC = () => {
     },
   });
 
-  const handleTwitterLogin = async () => {
-    const response = await fetch("/api/auth/twitter?redirect=/create");
-    const { authUrl } = await response.json();
-    window.location.href = authUrl; // Redirect user to Twitter login
+  const handleAuth = async () => {
+    if (!session) {
+      try {
+        await signIn("twitter", { callbackUrl: "/create" });
+      } catch (error) {
+        console.log("Failed to sign in with Twitter");
+      }
+    }
   };
 
   const handleSignOut = async () => {
     try {
-      const response = await fetch("/api/auth/signOut", {
-        credentials: "include",
-        method: "POST",
-      });
-      if (response.ok) {
-        // Handle successful signout (e.g., redirect to home page)
-        window.location.href = "/create";
-      }
+      await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -68,7 +66,7 @@ const CreateMindSharePage: React.FC = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    if (!username) {
+    if (!session) {
       toast.error("Please connect your Twitter account");
       return;
     }
@@ -81,7 +79,7 @@ const CreateMindSharePage: React.FC = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          twitterUsername: username,
+          twitterUsername: session?.user?.username,
           category: data.category,
           launchDate: new Date(data.launchDate).toISOString(),
         }),
@@ -107,14 +105,6 @@ const CreateMindSharePage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const user = Cookies.get("twitter_user");
-    if (user) {
-      setUserName(user);
-    }
-    console.log("twitter_user", JSON.stringify(user));
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#0C0D12] px-6">
       <main className=" font-lexend">
@@ -139,10 +129,10 @@ const CreateMindSharePage: React.FC = () => {
                   Connect Twitter
                 </label>
                 <div className="border border-dashed border-white/20 rounded-[10px] p-6 flex-col items-center justify-center">
-                  {!username ? (
+                  {!session ? (
                     <button
                       type="button"
-                      onClick={handleTwitterLogin}
+                      onClick={handleAuth}
                       className="flex items-center justify-center w-full py-3 bg-gradient-to-r from-[#1D9Bf0] to-[#0c8cf3] rounded-lg font-semibold text-lg text-white transition-transform transform"
                     >
                       <FaTwitter className="mr-2" /> Connect Twitter
@@ -158,7 +148,7 @@ const CreateMindSharePage: React.FC = () => {
 
                       <div className="flex items-center justify-between w-full gap-2 mb-6">
                         <p className="bg-[#12141A] p-3 py-3.5 w-full rounded-[10px] font-chakra text-sm text-[#94A3B8]">
-                          @{username}
+                          @{session.user.username}
                         </p>
                         <button
                           type="button"
