@@ -1,6 +1,7 @@
 import { Listing } from "./models/listing";
 import { MindShare } from "./models/mindshare";
 import connectToDatabase from "./utils/database";
+import { delay } from "./utils/helper";
 import { config } from "dotenv";
 config();
 
@@ -36,19 +37,19 @@ export async function main() {
       console.log(`\n----------------------------------------`);
       console.log(`Processing Twitter user: ${listing.twitterUsername}`);
       try {
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const formattedDate = yesterday.toISOString().split(".")[0] + "_UTC";
-
-        const query = `from:${listing.twitterUsername} since:${formattedDate}`;
+        // Construct query using within_time parameter for last 24 hours
+        const query = `from:${listing.twitterUsername} within_time:3h`;
+        console.log(`Search query: ${query}`);
 
         let allTweets: Tweet[] = [];
         let cursor = "";
-        let hasNextPage = true;
         let pageCount = 0;
 
-        while (hasNextPage) {
+        while (true) {
           pageCount++;
           console.log(`\nFetching page ${pageCount} of tweets...`);
+
+          await delay(500, 1000);
 
           const url = new URL(
             "https://api.twitterapi.io/twitter/tweet/advanced_search"
@@ -78,27 +79,25 @@ export async function main() {
             `Received ${tweetsData.tweets.length} tweets in this page`
           );
 
-          const recentTweets = tweetsData.tweets.filter((tweet) => {
-            const tweetDate = new Date(tweet.createdAt);
-            return tweetDate >= yesterday;
-          });
+          if (tweetsData.tweets.length === 0) {
+            console.log("No tweets found in this page, stopping pagination");
+            break;
+          }
 
           allTweets = [...allTweets, ...tweetsData.tweets];
 
-          if (recentTweets.length === 0) {
-            console.log(`Total tweets collected so far: ${allTweets.length}`);
-            console.log("No more recent tweets found, stopping pagination");
-            hasNextPage = false;
-          } else {
-            hasNextPage = tweetsData.has_next_page;
-            cursor = tweetsData.next_cursor;
-            console.log(`Has next page: ${hasNextPage}`);
+          if (!tweetsData.has_next_page || !tweetsData.next_cursor) {
+            console.log("No more pages available");
+            break;
           }
+
+          cursor = tweetsData.next_cursor;
+          console.log(`Moving to next page with cursor: ${cursor}`);
         }
 
         if (allTweets.length === 0) {
           console.log(
-            `No tweets found in the last 24 hours for ${listing.twitterUsername}`
+            `No tweets found for ${listing.twitterUsername} in the last 24 hours`
           );
           continue;
         }
@@ -107,7 +106,6 @@ export async function main() {
         console.log(`\nCalculating metrics for ${allTweets.length} tweets`);
         console.log(`Current follower count: ${followersCount}`);
 
-        // Updated engagement calculation to include bookmarks and quotes
         const totalEngagement = allTweets.reduce(
           (sum: number, tweet: Tweet) => {
             return (

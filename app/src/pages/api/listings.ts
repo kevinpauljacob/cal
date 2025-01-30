@@ -25,8 +25,6 @@ export default async function handler(
 
     // Calculate reference dates
     const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
@@ -55,50 +53,19 @@ export default async function handler(
       },
       {
         $addFields: {
-          // Latest metrics
-          latestMetrics: {
-            $arrayElemAt: ["$mindShareHistory", 0],
-          },
-          // 24h ago metrics
-          twentyFourHoursAgoMetrics: {
-            $filter: {
-              input: "$mindShareHistory",
-              as: "item",
-              cond: {
-                $and: [
-                  { $gte: ["$$item.date", twentyFourHoursAgo] },
-                  { $lt: ["$$item.date", now] },
-                ],
-              },
-            },
-          },
-          // Previous 24h metrics (for change calculation)
-          previousTwentyFourHoursMetrics: {
-            $filter: {
-              input: "$mindShareHistory",
-              as: "item",
-              cond: {
-                $and: [
-                  { $gte: ["$$item.date", fortyEightHoursAgo] },
-                  { $lt: ["$$item.date", twentyFourHoursAgo] },
-                ],
-              },
-            },
-          },
-          // 7d metrics
+          // Latest metrics (most recent record)
+          latestMetrics: { $arrayElemAt: ["$mindShareHistory", 0] },
+          // Second latest metrics (for 24h change)
+          previousMetrics: { $arrayElemAt: ["$mindShareHistory", 1] },
+          // Last 7 days metrics
           sevenDayMetrics: {
             $filter: {
               input: "$mindShareHistory",
               as: "item",
-              cond: {
-                $and: [
-                  { $gte: ["$$item.date", sevenDaysAgo] },
-                  { $lt: ["$$item.date", now] },
-                ],
-              },
+              cond: { $gte: ["$$item.date", sevenDaysAgo] },
             },
           },
-          // Previous 7d metrics (for change calculation)
+          // Previous 7 days metrics
           previousSevenDayMetrics: {
             $filter: {
               input: "$mindShareHistory",
@@ -118,30 +85,50 @@ export default async function handler(
           mindshare: {
             "24h": {
               score: {
-                $avg: "$twentyFourHoursAgoMetrics.mindShareScore",
+                $ifNull: ["$latestMetrics.mindShareScore", 0],
               },
               change: {
-                $subtract: [
-                  { $avg: "$twentyFourHoursAgoMetrics.mindShareScore" },
-                  { $avg: "$previousTwentyFourHoursMetrics.mindShareScore" },
+                $ifNull: [
+                  {
+                    $subtract: [
+                      "$latestMetrics.mindShareScore",
+                      { $ifNull: ["$previousMetrics.mindShareScore", 0] },
+                    ],
+                  },
+                  0,
                 ],
               },
             },
             "7d": {
               score: {
-                $avg: "$sevenDayMetrics.mindShareScore",
+                $ifNull: [{ $avg: "$sevenDayMetrics.mindShareScore" }, 0],
               },
               change: {
-                $subtract: [
-                  { $avg: "$sevenDayMetrics.mindShareScore" },
-                  { $avg: "$previousSevenDayMetrics.mindShareScore" },
+                $ifNull: [
+                  {
+                    $subtract: [
+                      {
+                        $ifNull: [
+                          { $avg: "$sevenDayMetrics.mindShareScore" },
+                          0,
+                        ],
+                      },
+                      {
+                        $ifNull: [
+                          { $avg: "$previousSevenDayMetrics.mindShareScore" },
+                          0,
+                        ],
+                      },
+                    ],
+                  },
+                  0,
                 ],
               },
             },
           },
-          engagementRate: "$latestMetrics.engagementRate",
-          viewsCount: "$latestMetrics.viewsCount",
-          tweetCount: "$latestMetrics.tweetCount",
+          engagementRate: { $ifNull: ["$latestMetrics.engagementRate", 0] },
+          viewsCount: { $ifNull: ["$latestMetrics.viewsCount", 0] },
+          tweetCount: { $ifNull: ["$latestMetrics.tweetCount", 0] },
         },
       },
       {
