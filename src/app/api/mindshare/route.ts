@@ -29,10 +29,24 @@ export async function GET() {
   try {
     await connectToDatabase();
     console.log("Database connection established successfully");
-    const listings = await Listing.find({});
+    // Get active listings and check launch dates
+    const listings = await Listing.find({ active: true });
+    const currentTime = new Date();
     console.log(`Found ${listings.length} listings to process`);
 
-    for (const listing of listings) {
+    // Deactivate listings with passed launch dates
+    await Promise.all(
+      listings.map(async (listing) => {
+        if (currentTime >= listing.launchDate) {
+          await Listing.findByIdAndUpdate(listing._id, { active: false });
+        }
+      })
+    );
+
+    // Get remaining active listings
+    const activeListings = await Listing.find({ active: true });
+
+    for (const listing of activeListings) {
       console.log(`\n----------------------------------------`);
       console.log(`Processing Twitter user: ${listing.twitterUsername}`);
       try {

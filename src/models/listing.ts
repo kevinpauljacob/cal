@@ -14,6 +14,7 @@ const ListingSchema = new mongoose.Schema({
   launchDate: { type: Date, required: true, index: true },
   createdAt: { type: Date, default: Date.now, index: true },
   lastUpdated: { type: Date, default: Date.now },
+  active: { type: Boolean, default: true },
 });
 
 export const Listing =

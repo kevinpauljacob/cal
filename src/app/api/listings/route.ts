@@ -21,6 +21,9 @@ export async function GET(request: Request) {
 
     const listings = await Listing.aggregate([
       {
+        $match: { active: true },
+      },
+      {
         $lookup: {
           from: "mindshares",
           let: { username: "$twitterUsername" },
