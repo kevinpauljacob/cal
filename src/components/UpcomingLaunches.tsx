@@ -79,8 +79,8 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   loading,
 }) => {
   // Sort projects by mindshare score
-  const sortedProjects = [...projects].sort(
-    (a, b) => b.mindshareScore - a.mindshareScore
+  const sortedProjects = (projects ?? []).sort(
+    (a, b) => (b?.mindshareScore ?? 0) - (a?.mindshareScore ?? 0)
   );
 
   const filteredProjects = sortedProjects.filter((project) => {
@@ -204,7 +204,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
     });
   };
 
-  const projects: Project[] = listings.map((listing) => ({
+  const projects: Project[] = listings?.map((listing) => ({
     profileImage: listing.profileImageUrl,
     project: listing.screenName,
     mindshareScore: listing.mindshare["24h"].score,
@@ -230,7 +230,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
       const data = await response.json();
 
       if (data.status === "success") {
-        onSearchResults(data.data.listings, {
+        onSearchResults(data.data.results, {
           currentPage: page,
           totalPages: data.data.pagination.pages,
         });

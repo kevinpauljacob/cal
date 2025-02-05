@@ -27,7 +27,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "../server/src/utils/database.ts"
+    "../server/src/utils/database.ts",
+    "src/app/api/auth/[...nextauth]",
+    "src/app/api/listings"
   ],
   "exclude": ["node_modules"]
 }

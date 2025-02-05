@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 import connectToDatabase from "@/utils/database";
 import { Listing } from "@/models/listing";
 import { MindShare } from "@/models/mindshare";
@@ -186,29 +186,25 @@ async function createListingAndMindshare(
   return { listing, mindShare };
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
-
+export async function POST(request: Request) {
   try {
-    await connectToDatabase();
-    const { twitterUsername, category, launchDate } = req.body;
+    const body = await request.json();
+    const { twitterUsername, category, launchDate } = body;
 
     if (!twitterUsername) {
-      return res.status(400).json({ message: "Twitter username is required" });
+      return NextResponse.json(
+        { message: "Twitter username is required" },
+        { status: 400 }
+      );
     }
 
+    await connectToDatabase();
     await checkExistingListing(twitterUsername);
 
     const apiKey = process.env.X_API_KEY;
     if (!apiKey) {
       throw new Error("Twitter API key is not configured");
     }
-
     // First get user info
     const userInfo = await getUserInfo(twitterUsername, apiKey);
 
@@ -223,38 +219,54 @@ export default async function handler(
       tweets
     );
 
-    res.status(201).json({
-      message: tweets.length
-        ? "Listing created successfully"
-        : "Listing created successfully with no recent tweets",
-      listing,
-      mindShare,
-    });
+    return NextResponse.json(
+      {
+        message: tweets.length
+          ? "Listing created successfully"
+          : "Listing created successfully with no recent tweets",
+        listing,
+        mindShare,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error creating listing:", error);
 
     if (error instanceof Error) {
       if (error.message.includes("Twitter API error")) {
-        return res.status(400).json({
-          message: "Twitter API error",
-          error: error.message,
-        });
+        return NextResponse.json(
+          {
+            message: "Twitter API error",
+            error: error.message,
+          },
+          { status: 400 }
+        );
       } else if (error.message.includes("HTTP error")) {
-        return res.status(502).json({
-          message: "Failed to fetch user data",
-          error: error.message,
-        });
+        return NextResponse.json(
+          {
+            message: "Failed to fetch user data",
+            error: error.message,
+          },
+          { status: 502 }
+        );
       } else if (error.message.includes("Listing already exists")) {
-        return res.status(400).json({
-          message: "A listing already exists with this account",
-          error: error.message,
-        });
+        return NextResponse.json(
+          {
+            message: "A listing already exists with this account",
+            error: error.message,
+          },
+          { status: 400 }
+        );
       }
     }
 
-    res.status(500).json({
-      message: "Error creating listing",
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    });
+    return NextResponse.json(
+      {
+        message: "Error creating listing",
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      },
+      { status: 500 }
+    );
   }
 }

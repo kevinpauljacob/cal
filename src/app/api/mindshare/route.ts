@@ -1,9 +1,8 @@
-import { Listing } from "./models/listing";
-import { MindShare } from "./models/mindshare";
-import connectToDatabase from "./utils/database";
-import { delay } from "./utils/helper";
-import { config } from "dotenv";
-config();
+import { NextResponse } from "next/server";
+import { Listing } from "@/models/listing";
+import { MindShare } from "@/models/mindshare";
+import connectToDatabase from "@/utils/database";
+import { delay } from "@/utils/helper";
 
 interface Author {
   followers: number;
@@ -26,7 +25,7 @@ interface TwitterResponse {
   next_cursor: string;
 }
 
-export async function main() {
+export async function GET() {
   try {
     await connectToDatabase();
     console.log("Database connection established successfully");
@@ -37,7 +36,6 @@ export async function main() {
       console.log(`\n----------------------------------------`);
       console.log(`Processing Twitter user: ${listing.twitterUsername}`);
       try {
-        // Construct query using within_time parameter for last 24 hours
         const query = `from:${listing.twitterUsername} within_time:3h`;
         console.log(`Search query: ${query}`);
 
@@ -162,15 +160,27 @@ export async function main() {
       }
     }
 
-    console.log("\nScript execution completed successfully");
-    process.exit(0);
+    console.log("Script execution completed successfully");
+
+    return NextResponse.json(
+      {
+        status: "success",
+        message: "Script execution completed successfully",
+        processedListings: listings.length,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error(
       "Fatal error occurred:",
       error instanceof Error ? error.message : error
     );
-    process.exit(1);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
 }
-
-main();

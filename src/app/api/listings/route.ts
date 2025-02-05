@@ -1,56 +1,25 @@
-// pages/api/search.ts
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 import connectToDatabase from "@/utils/database";
 import { Listing } from "@/models/listing";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "GET") {
-    return res.status(405).json({
-      status: "error",
-      code: "METHOD_NOT_ALLOWED",
-      message: "Method not allowed",
-    });
-  }
-
+export async function GET(request: Request) {
   try {
     await connectToDatabase();
 
-    const query = ((req.query.q as string) || "").trim();
-    const page = Math.max(1, parseInt((req.query.page as string) || "1"));
+    // Get URL parameters
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
 
-    if (!query) {
-      return res.status(400).json({
-        status: "error",
-        code: "INVALID_QUERY",
-        message: "Search query is required",
-      });
-    }
+    const totalListings = await Listing.countDocuments();
 
-    // Create search conditions
-    const searchConditions = {
-      $or: [
-        { screenName: { $regex: query, $options: "i" } },
-        { twitterUsername: { $regex: query, $options: "i" } },
-      ],
-    };
-
-    // Get total count for pagination
-    const totalResults = await Listing.countDocuments(searchConditions);
-
-    // Calculate reference dates (same as listings API)
+    // Calculate reference dates
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    const searchResults = await Listing.aggregate([
-      {
-        $match: searchConditions,
-      },
+    const listings = await Listing.aggregate([
       {
         $lookup: {
           from: "mindshares",
@@ -73,11 +42,13 @@ export default async function handler(
           as: "mindShareHistory",
         },
       },
-      // Rest of the aggregation pipeline same as listings API
       {
         $addFields: {
+          // Latest metrics (most recent record)
           latestMetrics: { $arrayElemAt: ["$mindShareHistory", 0] },
+          // Second latest metrics (for 24h change)
           previousMetrics: { $arrayElemAt: ["$mindShareHistory", 1] },
+          // Last 7 days metrics
           sevenDayMetrics: {
             $filter: {
               input: "$mindShareHistory",
@@ -85,6 +56,7 @@ export default async function handler(
               cond: { $gte: ["$$item.date", sevenDaysAgo] },
             },
           },
+          // Previous 7 days metrics
           previousSevenDayMetrics: {
             $filter: {
               input: "$mindShareHistory",
@@ -103,7 +75,9 @@ export default async function handler(
         $addFields: {
           mindshare: {
             "24h": {
-              score: { $ifNull: ["$latestMetrics.mindShareScore", 0] },
+              score: {
+                $ifNull: ["$latestMetrics.mindShareScore", 0],
+              },
               change: {
                 $ifNull: [
                   {
@@ -165,7 +139,9 @@ export default async function handler(
         },
       },
       {
-        $sort: { "mindshare.24h.score": -1 },
+        $sort: {
+          "mindshare.24h.score": -1,
+        },
       },
       {
         $skip: skip,
@@ -175,26 +151,40 @@ export default async function handler(
       },
     ]);
 
-    res.status(200).json({
+    if (!listings.length && page > 1) {
+      return NextResponse.json(
+        {
+          status: "error",
+          code: "NO_RESULTS",
+          message: "No listings found for this page",
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
       status: "success",
       data: {
-        listings: searchResults,
+        listings,
         pagination: {
-          total: totalResults,
-          pages: Math.ceil(totalResults / pageSize),
+          total: totalListings,
+          pages: Math.ceil(totalListings / pageSize),
           currentPage: page,
           pageSize,
         },
       },
     });
   } catch (error) {
-    console.error("Error searching listings:", error);
-    res.status(500).json({
-      status: "error",
-      code: "SEARCH_ERROR",
-      message: "Error searching listings",
-      details:
-        error instanceof Error ? error.message : "Unknown error occurred",
-    });
+    console.error("Error fetching listings:", error);
+    return NextResponse.json(
+      {
+        status: "error",
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error fetching listings",
+        details:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      },
+      { status: 500 }
+    );
   }
 }

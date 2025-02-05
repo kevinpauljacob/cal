@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
           scope: "tweet.read users.read",
         },
       },
-      profile: async (profile: TwitterProfile, tokens) => {
+      profile: async (profile: TwitterProfile) => {
         return {
           id: profile.data.id,
           username: profile.data.username,
@@ -53,4 +53,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET!,
 };
 
-export default NextAuth(authOptions);
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
