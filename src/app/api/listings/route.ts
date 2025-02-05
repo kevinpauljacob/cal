@@ -139,6 +139,7 @@ export async function GET(request: Request) {
           viewsCount: 1,
           tweetCount: 1,
           mindshare: 1,
+          creatorPublicKey: 1,
         },
       },
       {

@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import lineClamp from "@tailwindcss/line-clamp";
+import { Righteous } from "next/font/google";
 
 export default {
   content: [
@@ -21,6 +22,7 @@ export default {
         chakra: ["var(--font-chakra)", "sans-serif"],
         inter: ["var(--font-inter)", "sans-serif"],
         alata: ["var(--font-alata)", "sans-serif"],
+        righteous: ["var(--font-righteous)", "cursive"],
       },
     },
   },
