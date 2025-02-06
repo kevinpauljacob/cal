@@ -125,6 +125,9 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
               <tr
                 key={index}
                 className="border-t border-white/5 text-[12px] font-medium"
+                onClick={() =>
+                  window.open(`https://x.com/${project.twitter}`, "_blank")
+                }
               >
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">

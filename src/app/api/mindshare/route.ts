@@ -50,7 +50,7 @@ export async function GET() {
       console.log(`\n----------------------------------------`);
       console.log(`Processing Twitter user: ${listing.twitterUsername}`);
       try {
-        const query = `from:${listing.twitterUsername} within_time:3h`;
+        const query = `from:${listing.twitterUsername} within_time:24h -filter:retweets (filter:self_threads OR -filter:replies)`;
         console.log(`Search query: ${query}`);
 
         let allTweets: Tweet[] = [];
