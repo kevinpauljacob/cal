@@ -10,11 +10,14 @@ import {
   Chakra_Petch,
   Alata,
   Righteous,
+  Lilita_One,
+  Itim,
 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import SessionWrapper from "@/components/SessionWrapper";
 import AppWalletProvider from "@/components/WalletProvider";
+import NavBar from "@/components/NavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +34,17 @@ const lexend = Lexend({
   variable: "--font-lexend",
 });
 
+const lilita = Lilita_One({
+  subsets: ["latin"],
+  variable: "--font-lilita",
+  weight: ["400"],
+});
+
+const itim = Itim({
+  subsets: ["latin"],
+  variable: "--font-itim",
+  weight: ["400"],
+});
 const akshar = Akshar({
   subsets: ["latin"],
   variable: "--font-akshar",
@@ -83,7 +97,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${lexend.variable} ${akshar.variable} ${righteous.variable} ${roboto.variable} ${inter.variable} ${ibm.variable} ${chakra.variable} ${alata.variable}`}
+      className={`${lexend.variable} ${lilita.variable} ${itim.variable} ${akshar.variable} ${righteous.variable} ${roboto.variable} ${inter.variable} ${ibm.variable} ${chakra.variable} ${alata.variable}`}
     >
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -91,6 +105,7 @@ export default function RootLayout({
         <AppWalletProvider>
           <SessionWrapper>
             <Toaster position="bottom-right" reverseOrder={false} />
+            <NavBar />
             {children}
           </SessionWrapper>
         </AppWalletProvider>
