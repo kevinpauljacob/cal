@@ -12,24 +12,15 @@ export async function GET(request: NextRequest) {
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
 
-    if (!query) {
-      return NextResponse.json(
-        {
-          status: "error",
-          code: "INVALID_QUERY",
-          message: "Search query is required",
-        },
-        { status: 400 }
-      );
-    }
-
     // Create search conditions
-    const searchConditions = {
-      $or: [
-        { screenName: { $regex: query, $options: "i" } },
-        { twitterUsername: { $regex: query, $options: "i" } },
-      ],
-    };
+    const searchConditions = query
+      ? {
+          $or: [
+            { screenName: { $regex: query, $options: "i" } },
+            { twitterUsername: { $regex: query, $options: "i" } },
+          ],
+        }
+      : {};
 
     // Get total count for pagination
     const totalResults = await Listing.countDocuments(searchConditions);
@@ -38,6 +29,44 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    // Extract dynamic sort parameters
+    const sortFieldParam = searchParams.get("sortField");
+    const sortOrderParam = searchParams.get("sortOrder") || "asc";
+    const sortOrderValue = sortOrderParam === "asc" ? 1 : -1;
+    console.log("Sort Order Value:", sortOrderValue);
+    // Build dynamic sort criteria.
+    // If no sort field is provided, default to sorting by mindshare (24h) descending.
+    let sortCriteria: Record<string, 1 | -1> = {};
+    if (sortFieldParam) {
+      let dynamicField = "";
+      switch (sortFieldParam) {
+        case "followers":
+          dynamicField = "followers";
+          break;
+        case "mindshareScore":
+          dynamicField = "mindshare.24h.score";
+          break;
+        case "mindshareChange":
+          dynamicField = "mindshare.24h.change";
+          break;
+        default:
+          dynamicField = "mindshare.24h.score";
+          break;
+      }
+      sortCriteria = { [dynamicField]: sortOrderValue };
+    } else {
+      sortCriteria = { "mindshare.24h.score": -1 };
+    }
+    const debugResults = await Listing.aggregate([
+      {
+        $match: searchConditions,
+      },
+      { $sort: sortCriteria },
+      { $limit: 5 },
+    ]);
+
+    console.log(debugResults);
+    console.log("Sort Criteria:", sortCriteria);
 
     const searchResults = await Listing.aggregate([
       {
@@ -157,8 +186,12 @@ export async function GET(request: NextRequest) {
         },
       },
       {
-        $sort: { "mindshare.24h.score": -1 },
+        $addFields: { sortField: "$mindshare.24h.score" },
       },
+      {
+        $sort: { sortField: sortOrderValue },
+      },
+
       {
         $skip: skip,
       },

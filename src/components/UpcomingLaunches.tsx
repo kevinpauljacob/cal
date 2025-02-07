@@ -66,6 +66,10 @@ interface TokenProjectTableProps {
   searchQuery: string;
   loading: boolean;
   onPageChange: (page: number) => void;
+  sortField: string;
+  sortOrder: string;
+  setSortField: (field: string) => void;
+  setSortOrder: (order: string) => void;
 }
 
 const getCategoryStyle = (category: string) => {
@@ -90,6 +94,10 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   loading,
   onPageChange,
   currentPage,
+  sortField,
+  sortOrder,
+  setSortField,
+  setSortOrder,
 }) => {
   // Sort projects by mindshare score
   const sortedProjects = (projects ?? []).sort(
@@ -140,6 +148,16 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
       project.twitter.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+  const handleSort = (field: string) => {
+    // Toggle sort order if the same field is clicked again
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("asc"); // Default to ascending when switching fields
+    }
+  };
+
   console.log(filteredProjects, "H1");
 
   return (
@@ -151,12 +169,19 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
             <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
               Category
             </th>
-            <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
-              Followers
+            <th onClick={() => handleSort("followers")}>
+              Followers{" "}
+              {sortField === "followers" && (sortOrder === "asc" ? "▲" : "▼")}
             </th>
-            <th className="w-[15%] text-left py-4 px-6">MindShare</th>
-            <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
-              24h Change
+            <th onClick={() => handleSort("mindshareScore")}>
+              MindShare{" "}
+              {sortField === "mindshareScore" &&
+                (sortOrder === "asc" ? "▲" : "▼")}
+            </th>
+            <th onClick={() => handleSort("mindshareChange")}>
+              24h Change{" "}
+              {sortField === "mindshareChange" &&
+                (sortOrder === "asc" ? "▲" : "▼")}
             </th>
             <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
               Launch Date
@@ -263,7 +288,9 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const [sortField, setSortField] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleString("en-US", {
@@ -290,19 +317,17 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
   }));
 
   useEffect(() => {
-    if (debouncedSearchQuery) {
-      fetchSearchResults(debouncedSearchQuery, 1);
-    } else {
-      // If search query is empty, fetch normal listings
-      onPageChange(1);
-    }
-  }, [debouncedSearchQuery]);
+    fetchSearchResults(debouncedSearchQuery, 1);
+  }, [debouncedSearchQuery, sortField, sortOrder]);
 
   const fetchSearchResults = async (query: string, page: number) => {
     try {
-      const response = await fetch(`/api/search?q=${query}&page=${page}`);
+      let url = `/api/search?q=${query}&page=${page}`;
+      if (sortField) {
+        url += `&sortField=${sortField}&sortOrder=${sortOrder}`;
+      }
+      const response = await fetch(url);
       const data = await response.json();
-
       if (data.status === "success") {
         onSearchResults(data.data.results, {
           currentPage: page,
@@ -316,7 +341,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
 
   return (
     <div className="w-full py-8 space-y-6">
-      <h1 className="text-xl font-inter text-opacity-90 font-semibold blue_gradient">
+      <h1 className="text-xl font-lilita text-opacity-90  text-white/80">
         Upcoming Token Launches
       </h1>
 
@@ -326,13 +351,12 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-2 py-1 sm:px-6 sm:py-2 rounded-lg text-[13px] font-inter font-semibold transition-colors
-        ${getCategoryStyle(filter)}
-        ${
-          activeFilter === filter
-            ? "opacity-100"
-            : "opacity-60 hover:opacity-80"
-        }`}
+              className={`px-2 py-1 sm:px-6 sm:py-2  text-[13px] font-itim  transition-colors
+     bg-[#FFFFFF] bg-opacity-[2.5%] ${
+       activeFilter === filter
+         ? "text-[#E2AB00]"
+         : "text-white/50 hover:bg-opacity-5"
+     } `}
             >
               {filter}
             </button>
@@ -342,7 +366,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
         <div className="relative max-w-[312px] sm:max-w-80 w-full right-0">
           <div className="relative">
             <input
-              className="w-full bg-[#94A3B8]/5 placeholder:text-[#94A3B8]/50 text-white backdrop-blur-xl rounded-full pl-6 pr-10 h-9 focus:outline-none font-inter text-[10px]"
+              className="w-full bg-[#94A3B8]/5 placeholder:text-[#94A3B8]/50 font-lilita text-white backdrop-blur-xl  pl-6 pr-10 h-9 focus:outline-none "
               type="text"
               placeholder="Search"
               value={searchQuery}
@@ -354,7 +378,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
                 onClick={() => setSearchQuery("")}
               />
             ) : (
-              <Search className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 h-[10px] w-[10px]" />
+              <Search className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 h-3 w-3" />
             )}
           </div>
         </div>
@@ -367,6 +391,10 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
         loading={loading}
         currentPage={currentPage}
         onPageChange={onPageChange}
+        sortField={sortField}
+        sortOrder={sortOrder}
+        setSortField={setSortField}
+        setSortOrder={setSortOrder}
       />
 
       <Pagination

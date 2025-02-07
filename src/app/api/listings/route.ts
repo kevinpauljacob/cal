@@ -8,6 +8,7 @@ export async function GET(request: Request) {
 
     // Get URL parameters
     const { searchParams } = new URL(request.url);
+
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
@@ -143,8 +144,31 @@ export async function GET(request: Request) {
         },
       },
       {
+        $addFields: {
+          // Add a field to help with sorting listings without launch dates
+          hasLaunchDate: {
+            $cond: {
+              if: { $eq: ["$launchDate", null] },
+              then: 0,
+              else: 1,
+            },
+          },
+          // Convert launchDate string to Date for proper sorting
+          launchDateObj: {
+            $cond: {
+              if: { $eq: ["$launchDate", null] },
+              then: new Date("2099-12-31"), // Far future date for null values
+              else: { $toDate: "$launchDate" },
+            },
+          },
+        },
+      },
+      {
         $sort: {
-          "mindshare.24h.score": -1,
+          // First sort by whether they have a launch date (1s first, 0s last)
+          hasLaunchDate: -1,
+          // Then sort by launch date (ascending = upcoming first)
+          launchDateObj: 1,
         },
       },
       {
