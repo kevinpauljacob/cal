@@ -3,6 +3,17 @@ import TreeMapComponent from "@/components/TreeMap";
 import React, { useState, useEffect } from "react";
 import UpcomingLaunches from "@/components/UpcomingLaunches";
 import Link from "next/link";
+import { WalletConnectButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
+import {
+  connection,
+  copyToClipboard,
+  fetchSolBalance,
+  truncateAddress,
+} from "@/utils/helper";
+import { Copy } from "lucide-react";
+import Image from "next/image";
+import { SiSolana } from "react-icons/si";
 
 interface Listing {
   twitterUsername: string;
@@ -25,6 +36,8 @@ interface Listing {
       change: number;
     };
   };
+  creatorPublicKey?: string;
+  telegramUserName?: string;
 }
 
 interface TrendingItem {
@@ -37,16 +50,21 @@ interface TrendingItem {
 const MindSharePage: React.FC = () => {
   const [treeMapListings, setTreeMapListings] = useState<Listing[]>([]);
   const [tableListings, setTableListings] = useState<Listing[]>([]);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [mindshareTimeframe, setMindshareTimeframe] = useState<"24h" | "7d">(
     "24h"
   );
+  console.log(tableListings, "H2");
+  const [balance, setBalance] = useState("0");
+
   const [trendingTimeframe, setTrendingTimeframe] = useState<"24h" | "7d">(
     "24h"
   );
   const [trendingListings, setTrendingListings] = useState<TrendingItem[]>([]);
+  const { publicKey, connected, disconnect } = useWallet();
 
   // only positive
   const calculateTrendingListings = (
@@ -168,6 +186,14 @@ const MindSharePage: React.FC = () => {
     },
   ];
 
+  useEffect(() => {
+    if (!publicKey) return;
+
+    fetchSolBalance(connection, publicKey).then((b) =>
+      setBalance(b.toFixed(2))
+    );
+  }, [publicKey]);
+
   return (
     <div className="min-h-screen bg-[#0C0D12] p-6 ">
       <main className="font-lexend">
@@ -183,12 +209,68 @@ const MindSharePage: React.FC = () => {
                 </button>
               ))}
             </div>
-            <Link
-              href={"/create"}
-              className="bg-[#323546] font-bold text-white/75 text-center px-6 leading-3 rounded-[10px] text-[10px] py-2"
-            >
-              Get Listed
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link
+                href={"/create"}
+                className="bg-[#323546] font-bold text-white/75 text-center px-6 leading-3 rounded-[10px] text-[10px] py-2"
+              >
+                Get Listed
+              </Link>
+              {connected ? (
+                <div
+                  className="relative bg-[#192634] text-white flex items-center text-sm rounded-[10px] cursor-pointer font-chakra"
+                  onClick={() => setShowWalletModal(!showWalletModal)}
+                  // onMouseEnter={() => setShowWalletModal(true)}
+                >
+                  <div className="bg-white/5 px-3 py-2 rounded-l-[10px]">
+                    <Image
+                      width={15}
+                      height={15}
+                      src="/assets/wallet.png"
+                      alt="wallet"
+                    />
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 px-2">
+                    <SiSolana
+                      width={14}
+                      height={11}
+                      className="text-[#cccccc]"
+                    />
+                    <span className="font-medium font-chakra">{balance}</span>
+                  </div>
+                  {showWalletModal && (
+                    <div className="absolute top-14 right-0 bg-[#16171C] flex flex-col items-center gap-2 rounded-[10px] w-[140px] p-1.5">
+                      <div className="flex items-center gap-2 bg-[#2A2B2F] rounded-md w-full p-2">
+                        <div>
+                          <div className="text-white/50 text-[10px]">
+                            Wallet Address
+                          </div>
+                          <div>
+                            {truncateAddress(publicKey?.toBase58() ?? "")}
+                          </div>
+                        </div>
+                        <div
+                          className="rounded-md hover:bg-white/15 transition-all duration-300 ease-in-out p-1"
+                          onClick={() =>
+                            copyToClipboard(publicKey?.toBase58() ?? "")
+                          }
+                        >
+                          <Copy size={16} />
+                        </div>
+                      </div>
+                      <button
+                        className="text-white/50 hover:text-white/75 hover:bg-white/15 font-medium bg-[#2A2B2F]  rounded-md transition-all duration-300 ease-in-out w-full p-2"
+                        onClick={disconnect}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <WalletConnectButton />
+              )}
+            </div>
           </section>
           <section className="flex items-center justify-between mt-12 mb-6 md:my-12">
             <div className="flex flex-col items-start justify-start font-lexend">
@@ -282,7 +364,7 @@ const MindSharePage: React.FC = () => {
                     {trendingListings.slice(0, 7).map((item, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between px-3 py-4 transition-colors border-b-[1px] border-white border-opacity-[2.5%]"
+                        className="flex items-center justify-between px-3 py-4 transition-colors "
                       >
                         <div className="flex items-center gap-3 text-sm font-akshar">
                           <img

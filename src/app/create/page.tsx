@@ -8,11 +8,13 @@ import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
 import { Loader } from "@/components/Loader";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export type FormValues = {
   twitter: string;
   category: string;
   launchDate: string;
+  telegram: string;
 };
 
 const categories = [
@@ -25,6 +27,7 @@ const categories = [
 const CreateMindSharePage: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { wallet, publicKey, connected } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const {
     register,
@@ -37,6 +40,7 @@ const CreateMindSharePage: React.FC = () => {
       twitter: "",
       category: "",
       launchDate: "",
+      telegram: "",
     },
   });
 
@@ -70,6 +74,10 @@ const CreateMindSharePage: React.FC = () => {
       toast.error("Please connect your Twitter account");
       return;
     }
+    if (!connected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -82,6 +90,8 @@ const CreateMindSharePage: React.FC = () => {
           twitterUsername: session?.user?.username,
           category: data.category,
           launchDate: new Date(data.launchDate).toISOString(),
+          telegramUserName: data.telegram,
+          creatorPublicKey: publicKey?.toBase58(),
         }),
       });
 
@@ -215,6 +225,25 @@ const CreateMindSharePage: React.FC = () => {
                 {errors.launchDate && (
                   <p className="text-sm text-red-500 mt-2">
                     {errors.launchDate.message}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col w-full">
+                <p className="text-[13px] font-lexend font-medium mb-2 block">
+                  Personal Telegram
+                </p>
+                <input
+                  type="text"
+                  placeholder=""
+                  min={getMinDateTime()}
+                  className="w-1/2 sm:w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                  {...register("telegram", {
+                    required: "Telegram Username is Required",
+                  })}
+                />
+                {errors.telegram && (
+                  <p className="text-sm text-red-500 mt-2">
+                    {errors.telegram.message}
                   </p>
                 )}
               </div>

@@ -37,6 +37,7 @@ body {
   font-family: var(--font-lexend);
 }
 
+
 .custom-wallet-button .wallet-adapter-button {
   background-color: #192634 !important;
   color: rgba(255, 255, 255, 0.8) !important;

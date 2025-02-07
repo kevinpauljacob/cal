@@ -3,6 +3,11 @@ import { useState, useEffect } from "react";
 import Pagination from "./Pagination";
 import { Search, X } from "lucide-react";
 import useDebounce from "../utils/hooks";
+import { useWallet } from "@solana/wallet-adapter-react";
+import Image from "next/image";
+import EditLaunchDateModal from "./EditLaunchDateModal";
+import { toast } from "react-hot-toast";
+import { set } from "mongoose";
 
 interface Listing {
   twitterUsername: string;
@@ -25,6 +30,8 @@ interface Listing {
       change: number;
     };
   };
+  creatorPublicKey?: string;
+  telegramUserName?: string;
 }
 interface Project {
   id?: string;
@@ -36,6 +43,8 @@ interface Project {
   twitter: string;
   category: string;
   followers: number;
+  creatorPublicKey?: string;
+  telegramUserName?: string;
 }
 
 interface UpcomingLaunchesProps {
@@ -53,8 +62,10 @@ interface UpcomingLaunchesProps {
 interface TokenProjectTableProps {
   projects: Project[];
   filter: string;
+  currentPage: number;
   searchQuery: string;
   loading: boolean;
+  onPageChange: (page: number) => void;
 }
 
 const getCategoryStyle = (category: string) => {
@@ -77,11 +88,48 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   filter,
   searchQuery,
   loading,
+  onPageChange,
+  currentPage,
 }) => {
   // Sort projects by mindshare score
   const sortedProjects = (projects ?? []).sort(
     (a, b) => (b?.mindshareScore ?? 0) - (a?.mindshareScore ?? 0)
   );
+  const { publicKey, connected } = useWallet();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  // Add this function inside the TokenProjectTable component
+  const handleEditClick = (project: Project) => {
+    setSelectedProject(project);
+    setIsModalOpen(true);
+  };
+  const handleUpdateLaunchDate = async (newDate: string) => {
+    if (!selectedProject) return;
+    if (!connected) {
+      toast.error("Please connect your wallet to update launch date");
+    }
+    try {
+      const response = await fetch("/api/listings/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          twitterUsername: selectedProject.twitter.replace("@", ""),
+          creatorPublicKey: publicKey?.toBase58(),
+          newLaunchDate: newDate,
+        }),
+      });
+
+      toast.success("Launch date updated successfully");
+      onPageChange(currentPage);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error updating launch date:", error);
+      toast.error("Failed to update launch date");
+    }
+  };
 
   const filteredProjects = sortedProjects.filter((project) => {
     const matchesFilter =
@@ -92,6 +140,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
       project.twitter.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+  console.log(filteredProjects, "H1");
 
   return (
     <div className="w-full overflow-x-auto">
@@ -168,8 +217,22 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                     %
                   </span>
                 </td>
-                <td className="hidden sm:table-cell py-4 px-6 text-white/50">
+                <td className="hidden sm:flex flex-col py-4 px-6 text-white/50 items-start gap-1">
                   {project.launchDate}
+                  {project.creatorPublicKey === publicKey?.toString() && (
+                    <button
+                      onClick={() => handleEditClick(project)}
+                      className="bg-white bg-opacity-[2.5%] p-1 px-2 rounded-[10px] font-inter  flex items-center gap-1 font-semibold hover:bg-opacity-5 cursor-pointer"
+                    >
+                      <Image
+                        src="/assets/edit.svg"
+                        alt="Edit"
+                        width={15}
+                        height={15}
+                      />
+                      Edit
+                    </button>
+                  )}
                 </td>
                 <td className="py-4 px-6 text-white/50">{project.twitter}</td>
               </tr>
@@ -177,6 +240,13 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
           )}
         </tbody>
       </table>
+      <EditLaunchDateModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        currentDate={selectedProject?.launchDate ?? ""}
+        projectName={selectedProject?.project ?? ""}
+        onUpdate={handleUpdateLaunchDate}
+      />
     </div>
   );
 };
@@ -216,6 +286,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
     twitter: `@${listing.twitterUsername}`,
     category: listing.category[0].toUpperCase() + listing.category.slice(1),
     followers: listing.followers,
+    creatorPublicKey: listing.creatorPublicKey || "",
   }));
 
   useEffect(() => {
@@ -294,6 +365,8 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
         filter={activeFilter}
         searchQuery={searchQuery}
         loading={loading}
+        currentPage={currentPage}
+        onPageChange={onPageChange}
       />
 
       <Pagination
