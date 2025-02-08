@@ -118,7 +118,7 @@ const TableHeader: React.FC<{
             className={`${
               isActive && currentSort.order === "asc"
                 ? "text-emerald-500"
-                : "text-gray-500 group-hover:text-gray-400"
+                : "text-gray-500 group-hover:text-gray-400 transition-all ease-in-out duration-300"
             }`}
           />
           <ChevronDown
@@ -126,7 +126,7 @@ const TableHeader: React.FC<{
             className={`${
               isActive && currentSort.order === "desc"
                 ? "text-emerald-500"
-                : "text-gray-500 group-hover:text-gray-400"
+                : "text-gray-500 group-hover:text-gray-400 transition-all ease-in-out duration-300"
             }`}
           />
         </div>

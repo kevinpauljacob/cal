@@ -44,7 +44,7 @@ const NavBar: React.FC = () => {
             onClick={() => setShowWalletModal(!showWalletModal)}
             // onMouseEnter={() => setShowWalletModal(true)}
           >
-            <div className="bg-white/5 px-3 py-2 rounded-l-[10px]">
+            <div className="bg-white/5 px-3 py-2.5 rounded-l-[10px]">
               <Image
                 width={15}
                 height={15}
