@@ -72,7 +72,7 @@ const EditLaunchDateModal = ({
         className="bg-[#14151E] rounded-[10px] border border-white p-6 w-[90%] max-w-md"
       >
         <div className="flex justify-center items-center mb-6">
-          <h3 className="text-2xl font-bold text-[#94A3B8] font-inter">
+          <h3 className="text-2xl font-bold text-[#CD9C03] font-inter">
             Edit Launch Date
           </h3>
         </div>

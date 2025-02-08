@@ -154,10 +154,12 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   };
 
   // Add this function inside the TokenProjectTable component
-  const handleEditClick = (project: Project) => {
+  const handleEditClick = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation();
     setSelectedProject(project);
     setIsModalOpen(true);
   };
+
   const handleUpdateLaunchDate = async (newDate: string) => {
     if (!selectedProject) return;
     if (!connected) {
@@ -292,7 +294,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                   {project.launchDate}
                   {project.creatorPublicKey === publicKey?.toString() && (
                     <button
-                      onClick={() => handleEditClick(project)}
+                      onClick={(e) => handleEditClick(e, project)}
                       className="bg-white bg-opacity-[2.5%] p-1 px-2 rounded-[10px] font-inter  flex items-center gap-1 font-semibold hover:bg-opacity-5 cursor-pointer"
                     >
                       <Image
