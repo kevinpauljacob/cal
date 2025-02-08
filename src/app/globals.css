@@ -55,11 +55,12 @@ body {
 
 .custom-wallet-button .wallet-adapter-button:hover {
   background-color: rgba(25, 38, 52, 0.8) !important;
+  height: 100% !important;
 }
 
 .custom-wallet-button .wallet-adapter-button-start-icon {
   width: 1.25rem !important;
-  height: 0rem !important;
+  height: 100% !important;
 }
 
 /* @media (max-width: 640px) {
