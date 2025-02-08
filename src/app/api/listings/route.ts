@@ -1,6 +1,27 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/utils/database";
 import { Listing } from "@/models/listing";
+import { PipelineStage } from "mongoose";
+
+// Valid sort fields and their corresponding MongoDB field paths
+const VALID_SORT_FIELDS = {
+  followers: "followers",
+  mindshare: "mindshare.24h.score",
+  change: "mindshare.24h.change",
+  launchDate: "launchDate",
+} as const;
+
+type SortField = keyof typeof VALID_SORT_FIELDS;
+type SortOrder = "asc" | "desc";
+
+// Validation functions
+const isValidSortField = (field: string): field is SortField => {
+  return field in VALID_SORT_FIELDS;
+};
+
+const isValidSortOrder = (order: string): order is SortOrder => {
+  return order === "asc" || order === "desc";
+};
 
 export async function GET(request: Request) {
   try {
@@ -12,6 +33,35 @@ export async function GET(request: Request) {
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
 
+    // Get and validate sort parameters
+    const sortField = searchParams.get("sort") || "launchDate";
+    const sortOrder = searchParams.get("order") || "asc";
+
+    // Validate sort parameters
+    if (!isValidSortField(sortField)) {
+      return NextResponse.json(
+        {
+          status: "error",
+          code: "INVALID_SORT_FIELD",
+          message: `Invalid sort field. Valid fields are: ${Object.keys(
+            VALID_SORT_FIELDS
+          ).join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidSortOrder(sortOrder)) {
+      return NextResponse.json(
+        {
+          status: "error",
+          code: "INVALID_SORT_ORDER",
+          message: "Sort order must be either 'asc' or 'desc'",
+        },
+        { status: 400 }
+      );
+    }
+
     const totalListings = await Listing.countDocuments();
 
     // Calculate reference dates
@@ -19,7 +69,39 @@ export async function GET(request: Request) {
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    const listings = await Listing.aggregate([
+    // Build sort pipeline stages
+    const sortPipeline: PipelineStage[] = [];
+
+    if (sortField === "launchDate") {
+      // Add a stage to compute the sort field
+      sortPipeline.push({
+        $addFields: {
+          _tempSortField: {
+            $cond: {
+              if: { $eq: ["$launchDate", null] },
+              then: sortOrder === "desc" ? new Date(0) : new Date("2099-12-31"),
+              else: "$launchDate",
+            },
+          },
+        },
+      });
+
+      // Add the sort stage
+      sortPipeline.push({
+        $sort: {
+          _tempSortField: sortOrder === "desc" ? -1 : 1,
+        },
+      });
+    } else {
+      // For other fields, sort directly
+      sortPipeline.push({
+        $sort: {
+          [VALID_SORT_FIELDS[sortField]]: sortOrder === "desc" ? -1 : 1,
+        },
+      });
+    }
+
+    const pipeline: PipelineStage[] = [
       {
         $match: { active: true },
       },
@@ -47,11 +129,8 @@ export async function GET(request: Request) {
       },
       {
         $addFields: {
-          // Latest metrics (most recent record)
           latestMetrics: { $arrayElemAt: ["$mindShareHistory", 0] },
-          // Second latest metrics (for 24h change)
           previousMetrics: { $arrayElemAt: ["$mindShareHistory", 1] },
-          // Last 7 days metrics
           sevenDayMetrics: {
             $filter: {
               input: "$mindShareHistory",
@@ -59,7 +138,6 @@ export async function GET(request: Request) {
               cond: { $gte: ["$$item.date", sevenDaysAgo] },
             },
           },
-          // Previous 7 days metrics
           previousSevenDayMetrics: {
             $filter: {
               input: "$mindShareHistory",
@@ -142,18 +220,16 @@ export async function GET(request: Request) {
           creatorPublicKey: 1,
         },
       },
-      {
-        $sort: {
-          "mindshare.24h.score": -1,
-        },
-      },
+      ...sortPipeline,
       {
         $skip: skip,
       },
       {
         $limit: pageSize,
       },
-    ]);
+    ];
+
+    const listings = await Listing.aggregate(pipeline);
 
     if (!listings.length && page > 1) {
       return NextResponse.json(
