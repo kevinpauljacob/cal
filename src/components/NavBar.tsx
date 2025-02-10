@@ -28,9 +28,9 @@ const NavBar: React.FC = () => {
 
   return (
     <nav className="bg-[#0C0D12] px-8 flex justify-between items-center  border-2 border-b border-white/5">
-      <div>
+      <Link href="/">
         <Image src={"/assets/logo.svg"} alt="logo" width={88} height={76} />
-      </div>
+      </Link>
       <div className="flex items-center space-x-4">
         <Link
           href={"/create"}
