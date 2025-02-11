@@ -13,6 +13,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 export type FormValues = {
   twitter: string;
   category: string;
+  description: string;
   launchDate: string;
   telegram: string;
 };
@@ -38,6 +39,7 @@ const CreateMindSharePage: React.FC = () => {
     defaultValues: {
       twitter: "",
       category: "",
+      description: "",
       launchDate: "",
       telegram: "",
     },
@@ -86,6 +88,7 @@ const CreateMindSharePage: React.FC = () => {
           category: data.category,
           launchDate: new Date(data.launchDate).toISOString(),
           telegramUserName: data.telegram,
+          description: data.description,
         }),
       });
 
@@ -166,6 +169,32 @@ const CreateMindSharePage: React.FC = () => {
                   )}
                 </div>
               </div>
+              <div className="flex flex-col w-full">
+                <p className="text-[13px] font-lexend font-medium mb-2 block">
+                  Description
+                </p>
+                <textarea
+                  autoComplete="new-password"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  placeholder="Add a description for your listing"
+                  className={`w-full bg-[#94A3B8]/5  ${
+                    errors.description ? "border border-red-500" : ""
+                  } rounded-[10px] p-4 h-14 text-gray-300 placeholder-[#94A3B8]/20 font-medium font-roboto focus:outline-none min-h-[120px] resize-none`}
+                  {...register("description", {
+                    required: "Description is required",
+                    minLength: {
+                      value: 15,
+                      message: "At least 15 characters are required",
+                    },
+                  })}
+                />
+                {errors.description && (
+                  <p className="text-sm text-red-500 mt-2">
+                    {errors.description.message}
+                  </p>
+                )}
+              </div>
               <div>
                 <label className="text-[13px] font-lexend font-medium mb-2 block">
                   Category
@@ -173,7 +202,7 @@ const CreateMindSharePage: React.FC = () => {
                 <div className="">
                   <select
                     {...register("category", { required: true })}
-                    className="w-full bg-[#94A3B8]/5 text-white  py-4 px-3 rounded-[10px]  focus:outline-none focus:ring-transparent focus:ring-none"
+                    className="w-full bg-[#94A3B8]/5 text-gray-300  py-4 px-3 rounded-[10px]  focus:outline-none focus:ring-transparent focus:ring-none"
                   >
                     <option value="" className="bg-[#13141A]">
                       Select a category

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { FaAudioDescription } from "react-icons/fa";
 
 const ListingSchema = new mongoose.Schema({
   twitterUsername: { type: String, required: true, unique: true, index: true },
@@ -16,6 +17,7 @@ const ListingSchema = new mongoose.Schema({
   lastUpdated: { type: Date, default: Date.now },
   active: { type: Boolean, default: true },
   telegramUserName: { type: String, required: true },
+  description: { type: String, required: true },
 });
 
 export const Listing =

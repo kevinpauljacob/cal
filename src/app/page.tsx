@@ -194,8 +194,8 @@ const MindSharePage: React.FC = () => {
                 Mindshare of Upcoming Launches
               </h1>
               <p className="font-normal text-[#a1a1a5]/75 text-sm font-lexend">
-                Explore all the AI agents you&apos;ve created and participated
-                in.
+                Discover hyped crypto projects on Twitter. Track trends early
+                and stay ahead.
               </p>
             </div>
           </section>
