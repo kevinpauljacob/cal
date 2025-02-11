@@ -200,7 +200,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
 
   return (
     <div className="w-full relative">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto scroller">
         <div className="min-w-[800px]">
           <table className="w-full min-w-full table-fixed">
             <thead>

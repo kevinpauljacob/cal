@@ -98,10 +98,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${lexend.variable} ${lilita.variable} ${itim.variable} ${akshar.variable} ${righteous.variable} ${roboto.variable} ${inter.variable} ${ibm.variable} ${chakra.variable} ${alata.variable}`}
+      className={`scroller ${lexend.variable} ${lilita.variable} ${itim.variable} ${akshar.variable} ${righteous.variable} ${roboto.variable} ${inter.variable} ${ibm.variable} ${chakra.variable} ${alata.variable}`}
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >
         <AppWalletProvider>
           <SessionWrapper>

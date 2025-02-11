@@ -308,28 +308,6 @@ input[type="number"] {
 .overlay-exit {
   animation: slideOut 0.3s ease forwards;
 }
-.scrollbar::-webkit-scrollbar {
-  width: 12px;
-}
-
-/* Track */
-.scrollbar::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
-}
-
-/* Handle */
-.scrollbar::-webkit-scrollbar-thumb {
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
-  background: rgba(71, 71, 71, 0.8);
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
-}
-.scrollbar::-webkit-scrollbar-thumb:window-inactive {
-  background: rgba(109, 109, 109, 0.4);
-  height: 90px;
-}
 
 .border_gradient {
   border-image: linear-gradient(to right, #39c1e7 50%, #1fe1bb 50%) 1;
@@ -338,16 +316,22 @@ input[type="number"] {
   border-style: solid;
   padding: 5px;
 }
-::-webkit-scrollbar {
-  width: 12px;
+.scroller::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+.scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroller {
+  scrollbar-color: rgb(114, 114, 114) rgb(26, 26, 26);
+}
+.scroller:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-color-thumb);
+}
+.scroller:hover::-webkit-scrollbar-track {
+  background: var(--scrollbar-color-track);
 }
 
-::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 6px rgba(133, 133, 133, 0.3); 
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  -webkit-box-shadow: inset 0 0 6px rgba(250, 250, 250, 0.5); 
+.scroller:hover {
+  --fix: ; /* This custom property invalidates styles on hover, thereby enforcing a style recomputation. This is needed to work around a bug in Safari. */
 }
