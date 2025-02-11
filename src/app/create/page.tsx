@@ -27,7 +27,6 @@ const categories = [
 const CreateMindSharePage: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { wallet, publicKey, connected } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const {
     register,
@@ -74,10 +73,6 @@ const CreateMindSharePage: React.FC = () => {
       toast.error("Please connect your Twitter account");
       return;
     }
-    if (!connected) {
-      toast.error("Please connect your wallet");
-      return;
-    }
 
     setIsLoading(true);
     try {
@@ -91,7 +86,6 @@ const CreateMindSharePage: React.FC = () => {
           category: data.category,
           launchDate: new Date(data.launchDate).toISOString(),
           telegramUserName: data.telegram,
-          creatorPublicKey: publicKey?.toBase58(),
         }),
       });
 

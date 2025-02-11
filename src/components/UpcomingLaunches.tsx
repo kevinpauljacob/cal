@@ -8,6 +8,7 @@ import Image from "next/image";
 import EditLaunchDateModal from "./EditLaunchDateModal";
 import { toast } from "react-hot-toast";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface SortConfig {
   field: string;
@@ -152,6 +153,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   const handleSort = (field: string, order: "asc" | "desc") => {
     onSort(field, order);
   };
+  const { data: session, status } = useSession();
 
   // Add this function inside the TokenProjectTable component
   const handleEditClick = (e: React.MouseEvent, project: Project) => {
@@ -173,7 +175,6 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
         },
         body: JSON.stringify({
           twitterUsername: selectedProject.twitter.replace("@", ""),
-          creatorPublicKey: publicKey?.toBase58(),
           newLaunchDate: newDate,
         }),
       });
@@ -198,128 +199,138 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   });
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full min-w-full table-fixed">
-        <thead>
-          <tr className="text-[10px] text-white/30 font-medium">
-            <th className="w-[25%] text-left py-4 px-6">Project</th>
-            <th className="hidden sm:table-cell w-[12%] text-left py-4 px-6">
-              Category
-            </th>
-            <TableHeader
-              label="Followers"
-              field="followers"
-              currentSort={currentSort}
-              onSort={handleSort}
-              className="hidden sm:table-cell w-[12%] text-left py-4 px-6"
-            />
-            <TableHeader
-              label="MindShare"
-              field="mindshare"
-              currentSort={currentSort}
-              onSort={handleSort}
-              className="w-[15%] text-left py-4 px-6"
-            />
-            <TableHeader
-              label="24h Change"
-              field="change"
-              currentSort={currentSort}
-              onSort={handleSort}
-              className="hidden sm:table-cell w-[12%] text-left py-4 px-6"
-            />
-            <TableHeader
-              label="Launch Date"
-              field="launchDate"
-              currentSort={currentSort}
-              onSort={handleSort}
-              className="hidden sm:table-cell w-[12%] text-left py-4 px-6"
-            />
-            <th className="w-[12%] text-left py-4 px-6">Twitter</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr className="border-t border-white/5 text-[12px] font-medium">
-              <td className="py-4 px-6">Loading..</td>
-            </tr>
-          ) : (
-            filteredProjects.map((project, index: number) => (
-              <tr
-                key={index}
-                className="border-t border-white/5 text-[12px] font-medium"
-                onClick={() =>
-                  window.open(`https://x.com/${project.twitter}`, "_blank")
-                }
-              >
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={project.profileImage}
-                      alt={project.project}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="text-white/75">{project.project}</span>
-                  </div>
-                </td>
-                <td className="hidden sm:table-cell py-4 px-6">
-                  <span
-                    className={`px-3 py-1 rounded-full text-[10px] ${getCategoryStyle(
-                      project.category
-                    )}`}
-                  >
-                    {project.category}
-                  </span>
-                </td>
-                <td className="hidden sm:table-cell py-4 px-6 text-white/50">
-                  {project.followers.toLocaleString()}
-                </td>
-                <td className="py-4 px-6 text-white/75">
-                  {project.mindshareScore && project.mindshareScore.toFixed(2)}
-                </td>
-                <td className="hidden sm:table-cell py-4 px-6">
-                  <span
-                    className={
-                      project.mindshareChange >= 0
-                        ? "text-emerald-500"
-                        : "text-red-500"
+    <div className="w-full relative">
+      <div className="overflow-x-auto">
+        <div className="min-w-[800px]">
+          <table className="w-full min-w-full table-fixed">
+            <thead>
+              <tr className="text-[10px] text-white/30 font-medium">
+                <th className="sticky left-0 bg-[#0C0D12] w-[20%] text-left py-4 px-6 z-10">
+                  Project
+                </th>
+                <th className="table-cell w-[10%] text-left py-4 px-6">
+                  Category
+                </th>
+                <TableHeader
+                  label="Followers"
+                  field="followers"
+                  currentSort={currentSort}
+                  onSort={handleSort}
+                  className="table-cell w-[10%] text-left py-4 px-6"
+                />
+                <TableHeader
+                  label="MindShare"
+                  field="mindshare"
+                  currentSort={currentSort}
+                  onSort={handleSort}
+                  className="w-[15%] text-left py-4 px-6"
+                />
+                <TableHeader
+                  label="24h Change"
+                  field="change"
+                  currentSort={currentSort}
+                  onSort={handleSort}
+                  className="table-cell w-[12%] text-left py-4 px-6"
+                />
+                <TableHeader
+                  label="Launch Date"
+                  field="launchDate"
+                  currentSort={currentSort}
+                  onSort={handleSort}
+                  className="table-cell w-[12%] text-left py-4 px-6"
+                />
+                <th className="w-[12%] text-left py-4 px-6">Twitter</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr className="border-t border-white/5 text-[12px] font-medium">
+                  <td className="py-4 px-6">Loading..</td>
+                </tr>
+              ) : (
+                filteredProjects.map((project, index: number) => (
+                  <tr
+                    key={index}
+                    className="border-t border-white/5 text-[12px] font-medium"
+                    onClick={() =>
+                      window.open(`https://x.com/${project.twitter}`, "_blank")
                     }
                   >
-                    {project.mindshareChange > 0 ? "+" : ""}
-                    {project.mindshareChange &&
-                      project.mindshareChange.toFixed(2)}
-                    %
-                  </span>
-                </td>
-                <td className="hidden sm:flex flex-col py-4 px-6 text-white/50 items-start gap-1">
-                  {project.launchDate}
-                  {project.creatorPublicKey === publicKey?.toString() && (
-                    <button
-                      onClick={(e) => handleEditClick(e, project)}
-                      className="bg-white bg-opacity-[2.5%] p-1 px-2 rounded-[10px] font-inter  flex items-center gap-1 font-semibold hover:bg-opacity-5 cursor-pointer"
-                    >
-                      <Image
-                        src="/assets/edit.svg"
-                        alt="Edit"
-                        width={15}
-                        height={15}
-                      />
-                      Edit
-                    </button>
-                  )}
-                </td>
-                <td className="py-4 px-6 text-white/50">{project.twitter}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-      <EditLaunchDateModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        currentDate={selectedProject?.launchDate ?? ""}
-        projectName={selectedProject?.project ?? ""}
-        onUpdate={handleUpdateLaunchDate}
-      />
+                    <td className="sticky left-0 bg-[#0C0D12] py-4 px-6 z-10">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={project.profileImage}
+                          alt={project.project}
+                          className="w-8 h-8 rounded-full"
+                        />
+                        <span className="text-white/75">{project.project}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell py-4 px-6">
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] ${getCategoryStyle(
+                          project.category
+                        )}`}
+                      >
+                        {project.category}
+                      </span>
+                    </td>
+                    <td className="table-cell py-4 px-6 text-white/50">
+                      {project.followers.toLocaleString()}
+                    </td>
+                    <td className="py-4 px-6 text-white/75">
+                      {project.mindshareScore &&
+                        project.mindshareScore.toFixed(2)}
+                    </td>
+                    <td className="table-cell py-4 px-6">
+                      <span
+                        className={
+                          project.mindshareChange >= 0
+                            ? "text-emerald-500"
+                            : "text-red-500"
+                        }
+                      >
+                        {project.mindshareChange > 0 ? "+" : ""}
+                        {project.mindshareChange &&
+                          project.mindshareChange.toFixed(2)}
+                        %
+                      </span>
+                    </td>
+                    <td className="flex flex-col py-4 px-6 text-white/50 items-start gap-1">
+                      {project.launchDate}
+                      {}
+                      {project.twitter === `@` + session?.user.username && (
+                        <button
+                          onClick={(e) => handleEditClick(e, project)}
+                          className="bg-white bg-opacity-[2.5%] p-1 px-2 rounded-[10px] font-inter  flex items-center gap-1 font-semibold hover:bg-opacity-5 cursor-pointer"
+                        >
+                          <Image
+                            src="/assets/edit.svg"
+                            alt="Edit"
+                            width={15}
+                            height={15}
+                          />
+                          Edit
+                        </button>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 text-white/50">
+                      {project.twitter}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <EditLaunchDateModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          currentDate={selectedProject?.launchDate ?? ""}
+          projectName={selectedProject?.project ?? ""}
+          onUpdate={handleUpdateLaunchDate}
+        />
+      </div>
     </div>
   );
 };

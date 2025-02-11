@@ -5,8 +5,7 @@ import { Listing } from "@/models/listing";
 export async function PUT(request: Request) {
   try {
     await connectToDatabase();
-    const { twitterUsername, newLaunchDate, creatorPublicKey } =
-      await request.json();
+    const { twitterUsername, newLaunchDate } = await request.json();
 
     // Validate inputs
     if (!twitterUsername || !newLaunchDate) {
@@ -20,7 +19,6 @@ export async function PUT(request: Request) {
     const updatedListing = await Listing.findOneAndUpdate(
       {
         twitterUsername,
-        creatorPublicKey: creatorPublicKey,
       },
       {
         launchDate: new Date(newLaunchDate),

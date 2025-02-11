@@ -15,7 +15,6 @@ const ListingSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, index: true },
   lastUpdated: { type: Date, default: Date.now },
   active: { type: Boolean, default: true },
-  creatorPublicKey: { type: String, required: true },
   telegramUserName: { type: String, required: true },
 });
 

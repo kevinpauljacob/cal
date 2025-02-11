@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Copy } from "lucide-react";
+import { Copy, TwitchIcon, Twitter, X } from "lucide-react";
 import { SiSolana } from "react-icons/si";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
@@ -12,19 +12,11 @@ import {
   truncateAddress,
 } from "@/utils/helper";
 import WalletConnectButton from "./WalletConnectionButton";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 const NavBar: React.FC = () => {
-  const { publicKey, connected, disconnect } = useWallet();
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [balance, setBalance] = useState("0");
-
-  useEffect(() => {
-    if (!publicKey) return;
-
-    fetchSolBalance(connection, publicKey).then((b) =>
-      setBalance(b.toFixed(2))
-    );
-  }, [publicKey]);
+  const session = useSession();
 
   return (
     <nav className="bg-[#0C0D12] px-8 flex justify-between items-center  border-2 border-b border-white/5">
@@ -38,7 +30,38 @@ const NavBar: React.FC = () => {
         >
           Get Listed
         </Link>
-        {connected ? (
+        {session.status === "authenticated" ? (
+          <div
+            className="relative text-white/50 text-xs font-medium cursor-pointer"
+            onClick={() => setShowWalletModal(!showWalletModal)}
+          >
+            <div className=" w-[8rem]  bg-[#D9D9D9]/5 hover:bg-[#D9D9D9] hover:bg-opacity-[8%]  cursor-pointer py-2.5 text-center">{`  @${session.data.user.username}`}</div>
+
+            {showWalletModal && (
+              <div className="absolute top-14 right-0 bg-[#16171C] flex flex-col items-center gap-2 rounded-[10px] w-[140px] p-1.5">
+                <button
+                  className="text-white/50 hover:text-white/75 hover:bg-white/15 font-medium bg-[#2A2B2F]  rounded-md transition-all duration-300 ease-in-out w-full p-2"
+                  onClick={() => signOut()}
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            onClick={() => signIn("twitter")}
+            className="w-[4rem] py-3  flex gap-2 items-center justify-center  border border-[#1796f1] rounded-[10px] bg-[#D9D9D9]/5 hover:bg-[#D9D9D9] hover:bg-opacity-[8%]  cursor-pointer"
+          >
+            <Image
+              src="/assets/twitter.svg"
+              alt="Sign In"
+              width={14}
+              height={11}
+            />
+          </div>
+        )}
+        {/*   {connected ? (
           <div
             className="relative bg-[#192634] text-white flex items-center text-sm rounded-[10px] cursor-pointer font-chakra"
             onClick={() => setShowWalletModal(!showWalletModal)}
@@ -56,34 +79,10 @@ const NavBar: React.FC = () => {
               <SiSolana width={14} height={11} className="text-[#cccccc]" />
               <span className="font-medium font-chakra">{balance}</span>
             </div>
-            {showWalletModal && (
-              <div className="absolute top-14 right-0 bg-[#16171C] flex flex-col items-center gap-2 rounded-[10px] w-[140px] p-1.5">
-                <div className="flex items-center gap-2 bg-[#2A2B2F] rounded-md w-full p-2">
-                  <div>
-                    <div className="text-white/50 text-[10px]">
-                      Wallet Address
-                    </div>
-                    <div>{truncateAddress(publicKey?.toBase58() ?? "")}</div>
-                  </div>
-                  <div
-                    className="rounded-md hover:bg-white/15 transition-all duration-300 ease-in-out p-1 "
-                    onClick={() => copyToClipboard(publicKey?.toBase58() ?? "")}
-                  >
-                    <Copy size={16} />
-                  </div>
-                </div>
-                <button
-                  className="text-white/50 hover:text-white/75 hover:bg-white/15 font-medium bg-[#2A2B2F]  rounded-md transition-all duration-300 ease-in-out w-full p-2"
-                  onClick={disconnect}
-                >
-                  Disconnect
-                </button>
-              </div>
-            )}
           </div>
         ) : (
           <WalletConnectButton />
-        )}
+        )} */}
       </div>
     </nav>
   );
