@@ -1,11 +1,14 @@
-import React from "react";
+import Link from "next/link";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
+import { FaTelegram, FaXTwitter } from "react-icons/fa6";
 
 interface Listing {
   twitterUsername: string;
+  telegramUsername: string;
+  launchDate: string;
   screenName: string;
   profileImageUrl: string;
-  category: "ai" | "gaming" | "meme" | "political";
+  category: "ai" | "gaming" | "dog" | "cat";
   engagementRate: number;
   viewsCount: number;
   tweetCount: number;
@@ -26,6 +29,18 @@ interface TreeMapComponentProps {
   timeFrame: "24h" | "7d";
   loading: boolean;
 }
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
+
+const truncateName = (name: string, maxLength: number = 10) => {
+  return name?.length > maxLength ? `${name.substring(0, maxLength)}...` : name;
+};
 
 const TreeMapSkeleton = () => {
   return (
@@ -62,9 +77,9 @@ const transformData = (listings: Listing[], timeFrame: "24h" | "7d") => {
         size: listing.score,
         category: listing.category,
         profileImage: listing.profileImageUrl,
-        views: listing.viewsCount.toLocaleString(),
-        engagement: `${listing.engagementRate.toFixed(2)}%`,
-        tweets: listing.tweetCount,
+        twitterUsername: listing.twitterUsername,
+        telegramUsername: listing.telegramUsername,
+        launchDate: listing.launchDate,
         score: listing.score,
       })),
     },
@@ -73,7 +88,7 @@ const transformData = (listings: Listing[], timeFrame: "24h" | "7d") => {
 
 const CustomCell = (props: any) => {
   const { x, y, width, height, name, score, profileImage } = props;
-  const fillColor = "#00A071";
+  const fillColor = "#CD8C0D";
   const padding = 8;
 
   return (
@@ -104,9 +119,9 @@ const CustomCell = (props: any) => {
           fill="#fff"
           fontSize={12}
           strokeWidth="0"
-          className="font-medium text-white"
+          className="font-medium text-white truncate"
         >
-          {name}
+          {truncateName(name)}
         </text>
         {/* Mindshare score */}
         <text
@@ -142,10 +157,36 @@ const CustomTooltip = ({ active, payload }: any) => {
         <p className="text-white font-medium">{data.name}</p>
       </div>
       <div className="space-y-1 text-sm">
-        <p className="text-white/75">MindShare: {data.score.toFixed(1)}%</p>
-        <p className="text-white/75">Views: {data.views}</p>
-        <p className="text-white/75">Engagement: {data.engagement}</p>
-        <p className="text-white/75">Tweets: {data.tweets}</p>
+        <p className="text-white/75 font-semibold">
+          MindShare: {data.score.toFixed(1)}%
+        </p>
+        {data.launchDate && (
+          <p className="text-white/75 font-semibold">
+            Launch Date: {formatDate(data.launchDate)}
+          </p>
+        )}
+        <div>
+          {data.twitterUsername && (
+            <Link
+              href={`https://x.com/${data.twitterUsername}`}
+              target="_blank"
+              className="flex items-center gap-1 text-[#CD8C0D]"
+            >
+              <FaXTwitter className="text-white" />
+              {data.twitterUsername}
+            </Link>
+          )}
+          {data.telegramUsername && (
+            <Link
+              href={`https://t.me/${data.telegramUsername}`}
+              target="_blank"
+              className="flex items-center gap-1 text-blue-500"
+            >
+              <FaTelegram className="text-blue-500" />
+              {data.telegramUsername}
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

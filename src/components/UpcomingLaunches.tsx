@@ -16,11 +16,12 @@ interface SortConfig {
 }
 interface Listing {
   twitterUsername: string;
+  telegramUsername: string;
   screenName: string;
   profileImageUrl: string;
   bio: string;
   followers: number;
-  category: "ai" | "gaming" | "meme" | "political";
+  category: "ai" | "gaming" | "dog" | "cat";
   launchDate: string;
   engagementRate: number;
   viewsCount: number;
@@ -35,7 +36,6 @@ interface Listing {
       change: number;
     };
   };
-  creatorPublicKey?: string;
   telegramUserName?: string;
 }
 interface Project {
@@ -48,16 +48,13 @@ interface Project {
   twitter: string;
   category: string;
   followers: number;
-  creatorPublicKey?: string;
   telegramUserName?: string;
 }
 
 interface UpcomingLaunchesProps {
-  listings: Array<Listing>;
   currentPage: number;
   totalPages: number;
   loading: boolean;
-  onPageChange: (page: number) => void;
   onSearchResults: (
     results: Listing[],
     pagination: { currentPage: number; totalPages: number }
@@ -81,9 +78,9 @@ const getCategoryStyle = (category: string) => {
       return "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-pink-300";
     case "gaming":
       return "bg-emerald-500/20 text-emerald-300";
-    case "meme":
+    case "dog":
       return "bg-orange-500/20 text-orange-300";
-    case "political":
+    case "cat":
       return "bg-blue-500/20 text-blue-300";
     default:
       return "bg-white/5 text-white/50";
@@ -335,16 +332,15 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   );
 };
 
-const filterOptions = ["All", "AI", "Meme", "Gaming", "Political"];
+const filterOptions = ["All", "AI", "Dog", "Gaming", "Cat"];
 
 const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
-  listings,
   currentPage,
   totalPages,
   loading,
-  onPageChange,
   onSearchResults,
 }) => {
+  const [listings, setListings] = useState<Listing[]>([]);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentSort, setCurrentSort] = useState<SortConfig>({
@@ -375,7 +371,6 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
     twitter: `@${listing.twitterUsername}`,
     category: listing.category[0].toUpperCase() + listing.category.slice(1),
     followers: listing.followers,
-    creatorPublicKey: listing.creatorPublicKey || "",
   }));
 
   const fetchListings = async (
@@ -392,6 +387,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
       const data = await response.json();
 
       if (data.status === "success") {
+        setListings(data.data.listings);
         onSearchResults(data.data.listings, {
           currentPage: page,
           totalPages: data.data.pagination.pages,

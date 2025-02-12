@@ -7,11 +7,12 @@ import { connection, fetchSolBalance } from "@/utils/helper";
 
 interface Listing {
   twitterUsername: string;
+  telegramUsername: string;
   screenName: string;
   profileImageUrl: string;
   bio: string;
   followers: number;
-  category: "ai" | "gaming" | "meme" | "political";
+  category: "ai" | "gaming" | "dog" | "cat";
   launchDate: string;
   engagementRate: number;
   viewsCount: number;
@@ -26,7 +27,6 @@ interface Listing {
       change: number;
     };
   };
-  creatorPublicKey?: string;
   telegramUserName?: string;
 }
 
@@ -40,6 +40,7 @@ interface TrendingItem {
 const MindSharePage: React.FC = () => {
   const [treeMapListings, setTreeMapListings] = useState<Listing[]>([]);
   const [tableListings, setTableListings] = useState<Listing[]>([]);
+  const [totalListings, setTotalListings] = useState(0);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -102,6 +103,7 @@ const MindSharePage: React.FC = () => {
       console.log(data);
       if (data.status === "success") {
         setTreeMapListings(data.data.listings);
+        console.log("listings", data.data.listings);
         const trendingItems = calculateTrendingListings(
           data.data.listings,
           trendingTimeframe
@@ -110,31 +112,26 @@ const MindSharePage: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching initial listings:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Fetch paginated data for the table
-  const fetchTableListings = async (page: number) => {
+  const fetchTotalListings = async () => {
     try {
-      const response = await fetch(`/api/listings?page=${page}`);
+      const response = await fetch("/api/count");
       const data = await response.json();
-
       if (data.status === "success") {
-        setTableListings(data.data.listings);
-        setTotalPages(data.data.pagination.pages);
-        setCurrentPage(page);
+        setTotalListings(data.data.count);
       }
     } catch (error) {
-      console.error("Error fetching table listings:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching total listings:", error);
     }
   };
 
   // Initial data fetch
   useEffect(() => {
     fetchInitialListings();
-    fetchTableListings(1);
   }, []);
 
   useEffect(() => {
@@ -146,10 +143,6 @@ const MindSharePage: React.FC = () => {
       setTrendingListings(trendingItems);
     }
   }, [treeMapListings, trendingTimeframe]);
-
-  const handlePageChange = (newPage: number) => {
-    fetchTableListings(newPage);
-  };
 
   const handleSearchResults = (
     searchResults: Listing[],
@@ -204,13 +197,17 @@ const MindSharePage: React.FC = () => {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center space-x-4">
                   <h1 className="text-xl text-white/50 font-itim">MindShare</h1>
-                  <div className="flex items-center space-x-4">
+                  <div className="items-center gap-2 px-4 py-2 bg-[#EFA411]/10 text-[#EFA411] font-medium text-[10px] hidden min-[850px]:flex">
+                    Total Listings
+                    <span className="font-semibold">{totalListings}</span>
+                  </div>
+                  <div className="items-center hidden min-[850px]:flex">
                     {tags.map((tag, index) => (
                       <button
                         key={index}
-                        className={`${tag.className} px-4 py-2  bg-opacity-10 text-opacity-75 font-medium text-[10px]`}
+                        className={`${tag.className} px-4 py-2 bg-opacity-10 text-opacity-75 font-medium text-[10px] space-x-2`}
                       >
-                        {tag.title}{" "}
+                        <span>{tag.title}</span>
                         <span className="font-semibold">{tag.value}</span>
                       </button>
                     ))}
@@ -328,11 +325,9 @@ const MindSharePage: React.FC = () => {
             </div>
           </section>
           <UpcomingLaunches
-            listings={tableListings}
             currentPage={currentPage}
             totalPages={totalPages}
             loading={loading}
-            onPageChange={handlePageChange}
             onSearchResults={handleSearchResults}
           />
         </div>

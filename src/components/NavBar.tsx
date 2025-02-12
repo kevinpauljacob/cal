@@ -1,22 +1,15 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Copy, LogOut, TwitchIcon, Twitter, X } from "lucide-react";
-import { SiSolana } from "react-icons/si";
-import { useWallet } from "@solana/wallet-adapter-react";
-import {
-  connection,
-  copyToClipboard,
-  fetchSolBalance,
-  truncateAddress,
-} from "@/utils/helper";
-import WalletConnectButton from "./WalletConnectionButton";
+import { LogOut } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 const NavBar: React.FC = () => {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const session = useSession();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
     setIsOpen((prev) => !prev);
@@ -27,12 +20,14 @@ const NavBar: React.FC = () => {
         <Image src={"/assets/logo.svg"} alt="logo" width={88} height={76} />
       </Link>
       <div className="hidden sm:flex items-center space-x-4 ">
-        <Link
-          href={"/create"}
-          className="bg-[#D9D9D9] bg-opacity-[7%] font-lilita  text-[#E2AB00] text-center px-6 leading-3 text-lg py-3"
-        >
-          Get Listed
-        </Link>
+        {pathname !== "/create" && (
+          <Link
+            href={"/create"}
+            className="bg-[#D9D9D9] bg-opacity-[7%] font-lilita  text-[#E2AB00] text-center px-6 leading-3 text-lg py-3"
+          >
+            Get Listed
+          </Link>
+        )}
         {session.status === "authenticated" ? (
           <div
             className="relative text-white/50 text-xs font-medium cursor-pointer"

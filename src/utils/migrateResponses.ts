@@ -280,7 +280,6 @@ async function processCsvFile(filePath: string) {
           category: DEFAULT_CATEGORY,
           launchDate: parseLaunchDate(record["Launch Date"]),
           isVerified: userInfo.data.isBlueVerified,
-          creatorPublicKey: DEFAULT_PUBLIC_KEY,
           telegramUserName: telegramUsername || twitterUsername, // Use Twitter username as fallback
         });
 

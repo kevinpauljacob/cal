@@ -159,7 +159,9 @@ async function createListingAndMindshare(
   launchDate: string,
   tweets: Tweet[] = [],
   telegramUserName: string,
-  description: string
+  description: string,
+  platform?: string,
+  website?: string
 ) {
   const listing = new Listing({
     twitterUsername: userData.userName,
@@ -170,8 +172,10 @@ async function createListingAndMindshare(
     category,
     launchDate: new Date(launchDate),
     isVerified: userData.isBlueVerified,
-    telegramUserName: telegramUserName,
+    telegramUserName,
     description,
+    ...(platform && { platform }),
+    ...(website && { website }),
   });
 
   await listing.save();
@@ -199,6 +203,8 @@ export async function POST(request: Request) {
       launchDate,
       telegramUserName,
       description,
+      platform,
+      website,
     } = body;
 
     if (!twitterUsername) {
@@ -228,7 +234,9 @@ export async function POST(request: Request) {
       launchDate,
       tweets,
       telegramUserName,
-      description
+      description,
+      platform,
+      website
     );
 
     return NextResponse.json(
