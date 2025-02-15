@@ -3,14 +3,16 @@ import TreeMapComponent from "@/components/TreeMap";
 import React, { useState, useEffect } from "react";
 import UpcomingLaunches from "@/components/UpcomingLaunches";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { connection, fetchSolBalance } from "@/utils/helper";
+// import { connection, fetchSolBalance } from "@/utils/helper";
 
 interface Listing {
   twitterUsername: string;
-  telegramUsername: string;
+  telegramUsername?: string;
   screenName: string;
   profileImageUrl: string;
   bio: string;
+  platform?: string;
+  website?: string;
   followers: number;
   category: "ai" | "gaming" | "dog" | "cat";
   launchDate: string;
@@ -27,13 +29,11 @@ interface Listing {
       change: number;
     };
   };
-  telegramUserName?: string;
 }
 
 interface TrendingItem {
   name: string;
   percentage: number;
-  iconBg: string;
   avatar: string;
 }
 
@@ -48,67 +48,39 @@ const MindSharePage: React.FC = () => {
   const [mindshareTimeframe, setMindshareTimeframe] = useState<"24h" | "7d">(
     "24h"
   );
-  console.log(tableListings, "H2");
   const [balance, setBalance] = useState("0");
-
+  const [trendingListings, setTrendingListings] = useState<TrendingItem[]>([]);
   const [trendingTimeframe, setTrendingTimeframe] = useState<"24h" | "7d">(
     "24h"
   );
-  const [trendingListings, setTrendingListings] = useState<TrendingItem[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
   const { publicKey, connected, disconnect } = useWallet();
 
-  // only positive
-  const calculateTrendingListings = (
-    listings: Listing[],
-    timeframe: "24h" | "7d"
-  ) => {
-    return listings
-      .map((listing) => {
-        const change = listing.mindshare[timeframe].change;
-        return {
-          name: listing.screenName,
-          percentage: change,
-          iconBg: "#00A071",
-          avatar: listing.profileImageUrl,
-        };
-      })
-      .filter((item): item is TrendingItem => item.percentage > 0)
-      .sort((a, b) => b.percentage - a.percentage)
-      .slice(0, 10);
+  const fetchTrendingTokens = async (timeframe: "24h" | "7d") => {
+    try {
+      setTrendingLoading(true);
+      const response = await fetch(`/api/trending?timeframe=${timeframe}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setTrendingListings(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching trending tokens:", error);
+    } finally {
+      setTrendingLoading(false);
+    }
   };
 
-  // both positive and negative
-  // const calculateTrendingListings = ( listings: Listing[],
-  //  timeframe: "24h" | "7d") => {
-  //   return listings
-  //     .map((listing) => {
-  //       const change = listing.mindshare[timeframe].change;
-  //       return {
-  //         name: listing.screenName,
-  //         percentage: change,
-  //         iconBg: "#00A071",
-  //         avatar: listing.profileImageUrl,
-  //       };
-  //     })
-  //     .sort((a, b) => Math.abs(b.percentage) - Math.abs(a.percentage)) // Sort by absolute value
-  //     .slice(0, 10);
-  // };
-
-  // Fetch data for TreeMap and Trending (first page only)
   const fetchInitialListings = async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/listings?page=1");
       const data = await response.json();
-      console.log(data);
+
       if (data.status === "success") {
         setTreeMapListings(data.data.listings);
-        console.log("listings", data.data.listings);
-        const trendingItems = calculateTrendingListings(
-          data.data.listings,
-          trendingTimeframe
-        );
-        setTrendingListings(trendingItems);
+        // console.log("listings", data.data.listings);
       }
     } catch (error) {
       console.error("Error fetching initial listings:", error);
@@ -121,8 +93,9 @@ const MindSharePage: React.FC = () => {
     try {
       const response = await fetch("/api/count");
       const data = await response.json();
-      if (data.status === "success") {
-        setTotalListings(data.data.count);
+      // console.log(data);
+      if (data.success) {
+        setTotalListings(data.count);
       }
     } catch (error) {
       console.error("Error fetching total listings:", error);
@@ -132,17 +105,12 @@ const MindSharePage: React.FC = () => {
   // Initial data fetch
   useEffect(() => {
     fetchInitialListings();
+    fetchTotalListings();
   }, []);
 
   useEffect(() => {
-    if (treeMapListings.length > 0) {
-      const trendingItems = calculateTrendingListings(
-        treeMapListings,
-        trendingTimeframe
-      );
-      setTrendingListings(trendingItems);
-    }
-  }, [treeMapListings, trendingTimeframe]);
+    fetchTrendingTokens(trendingTimeframe);
+  }, [trendingTimeframe]);
 
   const handleSearchResults = (
     searchResults: Listing[],
@@ -169,13 +137,13 @@ const MindSharePage: React.FC = () => {
     },
   ];
 
-  useEffect(() => {
-    if (!publicKey) return;
+  // useEffect(() => {
+  //   if (!publicKey) return;
 
-    fetchSolBalance(connection, publicKey).then((b) =>
-      setBalance(b.toFixed(2))
-    );
-  }, [publicKey]);
+  //   fetchSolBalance(connection, publicKey).then((b) =>
+  //     setBalance(b.toFixed(2))
+  //   );
+  // }, [publicKey]);
 
   return (
     <div className="min-h-screen bg-[#0C0D12] p-6 py-0 ">
@@ -244,16 +212,13 @@ const MindSharePage: React.FC = () => {
                 <h2 className="text-xl font-semibold text-white/50">
                   Trending
                 </h2>
-                <div className="border-2 border-[#202329]  p-1">
-                  <div className="flex  overflow-hidden">
+                <div className="border-2 border-[#202329] p-1">
+                  <div className="flex overflow-hidden">
                     {["24h", "7d"].map((option) => (
                       <button
                         key={option}
                         onClick={() => {
-                          if (option === "24h" || option === "7d") {
-                            setTrendingTimeframe(option);
-                            calculateTrendingListings(treeMapListings, option);
-                          }
+                          setTrendingTimeframe(option as "24h" | "7d");
                         }}
                         className={`px-4 py-1 text-xs transition-colors duration-200 font-itim ${
                           trendingTimeframe === option
@@ -267,50 +232,42 @@ const MindSharePage: React.FC = () => {
                   </div>
                 </div>
               </div>
-
               <div className="">
-                {loading ? (
+                {trendingLoading ? (
                   // Loading skeleton UI
-                  Array(7)
+                  Array(5)
                     .fill(0)
                     .map((_, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between px-3 py-4 border-b-[1px] border-white border-opacity-[2.5%]"
+                        className="flex items-center justify-between p-3.5 border-b-[1px] border-white border-opacity-[2.5%]"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-[26px] h-[26px] rounded-full bg-white/5 animate-pulse" />
-                          <div className="w-24 h-4 bg-white/5 rounded animate-pulse" />
+                          <div className="w-24 h-3 bg-white/5 rounded animate-pulse" />
                         </div>
-                        <div className="w-12 h-4 bg-white/5 rounded animate-pulse" />
+                        <div className="w-12 h-3 bg-white/5 rounded animate-pulse" />
                       </div>
                     ))
                 ) : (
                   <>
-                    {trendingListings.slice(0, 7).map((item, index) => (
+                    {trendingListings.slice(0, 5).map((item, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between px-3 py-4 transition-colors "
+                        className="flex items-center justify-between px-3 py-4 transition-colors"
                       >
                         <div className="flex items-center gap-3 text-sm font-akshar">
                           <img
                             src={item.avatar}
                             alt={item.name}
-                            className={`w-[26px] h-[26px] rounded-full ${item.iconBg}`}
+                            className="w-[26px] h-[26px] rounded-full"
                           />
                           <span className="text-white/50 font-medium">
                             {item.name}
                           </span>
                         </div>
-                        <span
-                          className={`font-roboto font-bold text-sm ${
-                            item.percentage > 0
-                              ? "text-[#00a071]/90"
-                              : "text-red-500/90"
-                          }`}
-                        >
-                          {item.percentage > 0 ? "+" : ""}
-                          {item.percentage.toFixed(1)}%
+                        <span className="font-roboto font-bold text-sm text-[#00a071]/90">
+                          +{item.percentage.toFixed(1)}%
                         </span>
                       </div>
                     ))}
