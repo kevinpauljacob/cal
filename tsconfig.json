@@ -29,7 +29,8 @@
     ".next/types/**/*.ts",
     "../server/src/utils/database.ts",
     "src/app/api/auth/[...nextauth]",
-    "src/app/api/listings"
+    "src/app/api/listings",
+    "src/app/api/update"
   ],
   "exclude": ["node_modules"]
 }

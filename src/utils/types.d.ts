@@ -103,3 +103,29 @@ export type TweetResponse = {
   has_next_page: boolean;
   next_cursor: string;
 };
+
+export type ListingResponse = {
+  twitterUsername: string;
+  telegramUsername?: string;
+  screenName: string;
+  profileImageUrl: string;
+  bio: string;
+  platform?: string;
+  website?: string;
+  followers: number;
+  category: "ai" | "gaming" | "dog" | "cat";
+  launchDate: string;
+  engagementRate: number;
+  viewsCount: number;
+  tweetCount: number;
+  mindshare: {
+    "24h": {
+      score: number;
+      change: number;
+    };
+    "7d": {
+      score: number;
+      change: number;
+    };
+  };
+};

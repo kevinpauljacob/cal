@@ -3,7 +3,7 @@ import { toast } from "react-hot-toast";
 
 export async function delay(min: number, max: number): Promise<void> {
   const ms = Math.floor(Math.random() * (max - min + 1) + min);
-  console.log(`Waiting ${ms / 1000} seconds before next request...`);
+  // console.log(`Waiting ${ms / 1000} seconds before next request...`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 export function truncateAddress(str: string): string {
@@ -16,10 +16,11 @@ export function truncateAddress(str: string): string {
 
   return `${start}...${end}`;
 }
-export const connection = new Connection(
-  process.env.NEXT_PUBLIC_RPC!,
-  "confirmed"
-);
+
+// export const connection = new Connection(
+//   process.env.NEXT_PUBLIC_RPC!,
+//   "confirmed"
+// );
 
 export const copyToClipboard = async (text: string) => {
   try {

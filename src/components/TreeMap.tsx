@@ -1,31 +1,10 @@
 import Link from "next/link";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
 import { FaTelegram, FaXTwitter } from "react-icons/fa6";
-
-interface Listing {
-  twitterUsername: string;
-  telegramUsername: string;
-  launchDate: string;
-  screenName: string;
-  profileImageUrl: string;
-  category: "ai" | "gaming" | "dog" | "cat";
-  engagementRate: number;
-  viewsCount: number;
-  tweetCount: number;
-  mindshare: {
-    "24h": {
-      score: number;
-      change: number;
-    };
-    "7d": {
-      score: number;
-      change: number;
-    };
-  };
-}
+import { type ListingResponse } from "@/utils/types";
 
 interface TreeMapComponentProps {
-  listings: Listing[];
+  listings: ListingResponse[];
   timeFrame: "24h" | "7d";
   loading: boolean;
 }
@@ -44,7 +23,7 @@ const truncateName = (name: string, maxLength: number = 10) => {
 
 const TreeMapSkeleton = () => {
   return (
-    <div className="w-full h-[400px] grid grid-cols-3 gap-0.5 bg-[#0C0D12]/50">
+    <div className="w-full h-[285px] grid grid-cols-3 gap-0.5 bg-[#0C0D12]/50">
       {Array(6)
         .fill(0)
         .map((_, i) => (
@@ -59,7 +38,10 @@ const TreeMapSkeleton = () => {
   );
 };
 
-const transformData = (listings: Listing[], timeFrame: "24h" | "7d") => {
+const transformData = (
+  listings: ListingResponse[],
+  timeFrame: "24h" | "7d"
+) => {
   const validListings = listings
     .map((listing) => ({
       ...listing,
@@ -204,7 +186,7 @@ const TreeMapComponent: React.FC<TreeMapComponentProps> = ({
   }
 
   return (
-    <div className="w-full h-[400px]">
+    <div className="w-full h-[285px]">
       <ResponsiveContainer>
         <Treemap
           data={chartData}
