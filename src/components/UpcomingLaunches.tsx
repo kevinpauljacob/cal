@@ -16,10 +16,12 @@ interface SortConfig {
 }
 interface Listing {
   twitterUsername: string;
-  telegramUsername: string;
+  telegramUsername?: string;
   screenName: string;
   profileImageUrl: string;
   bio: string;
+  platform?: string;
+  website?: string;
   followers: number;
   category: "ai" | "gaming" | "dog" | "cat";
   launchDate: string;
@@ -36,7 +38,6 @@ interface Listing {
       change: number;
     };
   };
-  telegramUserName?: string;
 }
 interface Project {
   id?: string;
@@ -165,7 +166,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
       toast.error("Please connect your wallet to update launch date");
     }
     try {
-      const response = await fetch("/api/listings/update", {
+      const response = await fetch("/api/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -183,6 +184,16 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
       console.error("Error updating launch date:", error);
       toast.error("Failed to update launch date");
     }
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    });
   };
 
   const filteredProjects = projects.filter((project) => {
@@ -294,9 +305,8 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                       </span>
                     </td>
                     <td className="flex flex-col py-4 px-6 text-white/50 items-start gap-1">
-                      {project.launchDate}
-                      {}
-                      {project.twitter === `@` + session?.user.username && (
+                      {formatDate(project.launchDate)}
+                      {project.twitter === `@` + session?.user?.username && (
                         <button
                           onClick={(e) => handleEditClick(e, project)}
                           className="bg-white bg-opacity-[2.5%] p-1 px-2 rounded-[10px] font-inter  flex items-center gap-1 font-semibold hover:bg-opacity-5 cursor-pointer"
@@ -343,6 +353,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
   const [listings, setListings] = useState<Listing[]>([]);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [currentSort, setCurrentSort] = useState<SortConfig>({
     field: "launchDate",
     order: "asc",
@@ -411,28 +422,52 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
     const apiField = fieldMap[field];
     if (apiField) {
       setCurrentSort({ field: apiField, order });
-      fetchListings(1, apiField, order);
+      if (debouncedSearchQuery) {
+        fetchSearchResults(debouncedSearchQuery, 1, apiField, order);
+      } else {
+        fetchListings(1, apiField, order);
+      }
     }
   };
 
   const handlePageChange = (page: number) => {
-    fetchListings(page);
+    if (debouncedSearchQuery) {
+      fetchSearchResults(debouncedSearchQuery, page);
+    } else {
+      fetchListings(page);
+    }
   };
 
   useEffect(() => {
     if (debouncedSearchQuery) {
+      setIsSearching(true);
       fetchSearchResults(debouncedSearchQuery, 1);
     } else {
+      setIsSearching(false);
       fetchListings(1);
     }
   }, [debouncedSearchQuery]);
 
-  const fetchSearchResults = async (query: string, page: number) => {
+  const fetchSearchResults = async (
+    query: string,
+    page: number,
+    sort?: string,
+    order?: "asc" | "desc"
+  ) => {
     try {
-      const response = await fetch(`/api/search?q=${query}&page=${page}`);
+      const sortField = sort || currentSort.field;
+      const sortOrder = order || currentSort.order;
+
+      let url = `/api/search?q=${query}&page=${page}`;
+      if (sort) {
+        url += `&sort=${sortField}&order=${sortOrder}`;
+      }
+
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.status === "success") {
+        setListings(data.data.results);
         onSearchResults(data.data.results, {
           currentPage: page,
           totalPages: data.data.pagination.pages,
@@ -440,6 +475,8 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
       }
     } catch (error) {
       console.error("Error searching listings:", error);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -492,7 +529,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
         projects={projects}
         filter={activeFilter}
         searchQuery={searchQuery}
-        loading={loading}
+        loading={loading || isSearching}
         currentPage={currentPage}
         currentSort={currentSort}
         onPageChange={handlePageChange}
