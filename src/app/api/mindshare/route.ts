@@ -125,7 +125,7 @@ export async function GET() {
       console.log(`\nProcessing Twitter user: ${listing.twitterUsername}`);
       try {
         // Construct Twitter search query
-        const query = `(from:${listing.twitterUsername} OR (@${listing.twitterUsername} -from:${listing.twitterUsername})) within_time:2d -filter:retweets (filter:self_threads OR -filter:replies)`;
+        const query = `(from:${listing.twitterUsername} OR (@${listing.twitterUsername} -from:${listing.twitterUsername})) within_time:24h -filter:retweets (filter:self_threads OR -filter:replies)`;
 
         // Fetch tweets with pagination
         let allTweets: Tweet[] = [];
