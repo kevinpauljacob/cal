@@ -57,7 +57,7 @@ const CreateMindSharePage: React.FC = () => {
       try {
         await signIn("twitter", { callbackUrl: "/create" });
       } catch (error) {
-        console.log("Failed to sign in with Twitter");
+        // console.log("Failed to sign in with Twitter");
       }
     }
   };
@@ -72,9 +72,13 @@ const CreateMindSharePage: React.FC = () => {
 
   const getMinDateTime = () => {
     const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    const minTime = now.toISOString().slice(0, 16);
-    return minTime;
+    return now.toISOString().slice(0, 16);
+  };
+
+  // Convert local datetime to UTC for API submission
+  const localToUTC = (localDateTimeStr: string) => {
+    const date = new Date(localDateTimeStr);
+    return date.toISOString();
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -85,6 +89,8 @@ const CreateMindSharePage: React.FC = () => {
 
     setIsLoading(true);
     try {
+      const utcLaunchDate = localToUTC(data.launchDate);
+
       const response = await fetch("/api/create", {
         method: "POST",
         headers: {
@@ -97,7 +103,7 @@ const CreateMindSharePage: React.FC = () => {
           category: data.category,
           description: data.description,
           platform: data.platform,
-          launchDate: new Date(data.launchDate).toISOString(),
+          launchDate: utcLaunchDate,
         }),
       });
 
@@ -107,7 +113,7 @@ const CreateMindSharePage: React.FC = () => {
       }
 
       const result = await response.json();
-      console.log(result);
+      // console.log(result);
       toast.success("Listing created successfully!");
       reset();
       router.push("/");
@@ -293,6 +299,10 @@ const CreateMindSharePage: React.FC = () => {
                     },
                   })}
                 />
+                <p className="text-xs text-[#94A3B8]/50 mt-3">
+                  All times are in your local timezone (
+                  {Intl.DateTimeFormat().resolvedOptions().timeZone})
+                </p>
                 {errors.launchDate && (
                   <p className="text-sm text-red-500 mt-2">
                     {errors.launchDate.message}

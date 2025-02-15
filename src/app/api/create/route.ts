@@ -91,7 +91,7 @@ async function getUserInfo(
   }
 
   const data = await response.json();
-  console.log(data);
+  // console.log(data);
   if (data.status === "error") {
     throw new Error(`Twitter API error: ${data.msg}`);
   }

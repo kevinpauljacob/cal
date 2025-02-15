@@ -12,6 +12,10 @@ export async function GET(request: NextRequest) {
     const pageSize = 10;
     const skip = (page - 1) * pageSize;
 
+    // Get sort parameters
+    const sortField = searchParams.get("sort") || "mindshare.24h.score";
+    const sortOrder = searchParams.get("order") || "desc";
+
     if (!query) {
       return NextResponse.json(
         {
@@ -38,6 +42,10 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    // Create the sort object
+    const sortObj: any = {};
+    sortObj[sortField] = sortOrder === "asc" ? 1 : -1;
 
     const searchResults = await Listing.aggregate([
       {
@@ -157,7 +165,7 @@ export async function GET(request: NextRequest) {
         },
       },
       {
-        $sort: { "mindshare.24h.score": -1 },
+        $sort: sortObj,
       },
       {
         $skip: skip,
