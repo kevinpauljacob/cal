@@ -486,13 +486,13 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
         Upcoming Token Launches
       </h1>
 
-      <div className="flex flex-col-reverse sm:flex-row gap-4 justify-between items-center w-full">
-        <div className="flex flex-wrap gap-2 sm:gap-4">
+      <div className="flex flex-col-reverse min-[900px]:flex-row gap-2 min-[900px]:gap-4 justify-between items-center w-full">
+        <div className="flex flex-wrap gap-2 min-[900px]:gap-4 w-full">
           {filterOptions.map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-2 py-1 sm:px-6 sm:py-2  text-[13px] font-itim  transition-colors
+              className={`flex-1 min-[900px]:w-max w-full px-2 py-2 sm:px-6 text-[13px] font-itim  transition-colors
      bg-[#FFFFFF] bg-opacity-[2.5%] ${
        activeFilter === filter
          ? "text-[#E2AB00]"
@@ -504,7 +504,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
           ))}
         </div>
 
-        <div className="relative max-w-[312px] sm:max-w-80 w-full right-0">
+        <div className="relative min-[900px]:max-w-[500px] w-full right-0">
           <div className="relative">
             <input
               className="w-full bg-[#94A3B8]/5 placeholder:text-[#94A3B8]/50 font-lilita text-white backdrop-blur-xl  pl-6 pr-10 h-9 focus:outline-none "
