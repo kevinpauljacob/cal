@@ -23,8 +23,8 @@ interface Listing {
   platform?: string;
   website?: string;
   followers: number;
-  category: "ai" | "gaming" | "dog" | "cat";
-  launchDate: string;
+  category: "meme" | "utility";
+  launchDate?: string;
   engagementRate: number;
   viewsCount: number;
   tweetCount: number;
@@ -45,7 +45,7 @@ interface Project {
   project: string;
   mindshareScore: number;
   mindshareChange: number;
-  launchDate: string;
+  launchDate?: string;
   twitter: string;
   category: string;
   followers: number;
@@ -75,14 +75,12 @@ interface TokenProjectTableProps {
 
 const getCategoryStyle = (category: string) => {
   switch (category.toLowerCase()) {
-    case "ai":
-      return "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-pink-300";
-    case "gaming":
+    // case "ai":
+    //   return "bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-pink-300";
+    case "meme":
       return "bg-emerald-500/20 text-emerald-300";
-    case "dog":
+    case "utility":
       return "bg-orange-500/20 text-orange-300";
-    case "cat":
-      return "bg-blue-500/20 text-blue-300";
     default:
       return "bg-white/5 text-white/50";
   }
@@ -144,7 +142,6 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   onPageChange,
   onSort,
 }) => {
-  const { publicKey, connected } = useWallet();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
@@ -162,8 +159,8 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
 
   const handleUpdateLaunchDate = async (newDate: string) => {
     if (!selectedProject) return;
-    if (!connected) {
-      toast.error("Please connect your wallet to update launch date");
+    if (!session) {
+      toast.error("Please connect your twitter to update launch date");
     }
     try {
       const response = await fetch("/api/update", {
@@ -305,7 +302,9 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
                       </span>
                     </td>
                     <td className="flex flex-col py-4 px-6 text-white/50 items-start gap-1">
-                      {formatDate(project.launchDate)}
+                      {project.launchDate
+                        ? formatDate(project.launchDate)
+                        : "TBA"}
                       {project.twitter === `@` + session?.user?.username && (
                         <button
                           onClick={(e) => handleEditClick(e, project)}
@@ -342,7 +341,7 @@ const TokenProjectTable: React.FC<TokenProjectTableProps> = ({
   );
 };
 
-const filterOptions = ["All", "AI", "Dog", "Gaming", "Cat"];
+const filterOptions = ["All", "Meme", "Utility"];
 
 const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
   currentPage,
@@ -378,7 +377,7 @@ const UpcomingLaunches: React.FC<UpcomingLaunchesProps> = ({
     project: listing.screenName,
     mindshareScore: listing.mindshare["24h"].score,
     mindshareChange: listing.mindshare["24h"].change,
-    launchDate: formatDate(listing.launchDate),
+    launchDate: listing.launchDate ? formatDate(listing.launchDate) : undefined,
     twitter: `@${listing.twitterUsername}`,
     category: listing.category[0].toUpperCase() + listing.category.slice(1),
     followers: listing.followers,

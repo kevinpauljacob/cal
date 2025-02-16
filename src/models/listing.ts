@@ -9,9 +9,9 @@ const ListingSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ["ai", "gaming", "dog", "cat"],
+    enum: ["meme", "utility"],
   },
-  launchDate: { type: Date, required: true, index: true },
+  launchDate: { type: Date },
   createdAt: { type: Date, default: Date.now, index: true },
   lastUpdated: { type: Date, default: Date.now },
   active: { type: Boolean, default: true },

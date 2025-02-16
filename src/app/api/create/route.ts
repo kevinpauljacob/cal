@@ -23,6 +23,20 @@ interface UserInfoResponse {
   msg: string;
 }
 
+type ListingData = {
+  twitterUsername: string;
+  screenName: string;
+  profileImageUrl: string;
+  bio: string;
+  followers: number;
+  category: string;
+  telegramUserName: string;
+  description: string;
+  platform?: string;
+  website?: string;
+  launchDate?: Date;
+};
+
 function calculateEngagement(tweets: Tweet[]): number {
   if (tweets.length === 0) return 0;
 
@@ -163,20 +177,33 @@ async function createListingAndMindshare(
   platform?: string,
   website?: string
 ) {
-  const listing = new Listing({
+  const listingData: ListingData = {
     twitterUsername: userData.userName,
     screenName: userData.name,
     profileImageUrl: userData.profilePicture,
     bio: userData.description,
     followers: userData.followers,
     category,
-    launchDate: new Date(launchDate),
-    isVerified: userData.isBlueVerified,
     telegramUserName,
     description,
     ...(platform && { platform }),
     ...(website && { website }),
-  });
+  };
+
+  if (launchDate) {
+    try {
+      const parsedDate = new Date(launchDate);
+      // Check if it's a valid date (not Invalid Date)
+      if (!isNaN(parsedDate.getTime())) {
+        listingData.launchDate = parsedDate;
+      }
+    } catch (e) {
+      // Invalid date, ignore it
+      console.warn("Invalid launch date provided:", launchDate);
+    }
+  }
+
+  const listing = new Listing(listingData);
 
   await listing.save();
 

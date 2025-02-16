@@ -82,7 +82,7 @@ const EditLaunchDateModal = ({
             <label className="block text-xs text-white/40 mb-2 font-lexend">
               Current Date:{" "}
               <span className="font-mono text-[#C2C2C4]/90 text-sm font-bold ml-1">
-                {currentDate}
+                {currentDate.length > 0 ? currentDate : "TBA"}
               </span>
             </label>
             <input

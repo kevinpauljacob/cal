@@ -104,22 +104,21 @@ export async function GET() {
     await connectToDatabase();
     console.log("Database connection established successfully");
 
-    // Get and process active listings
     const listings = await Listing.find({ active: true });
     console.log(`Found ${listings.length} active listings to process`);
 
-    // Check and deactivate passed launch dates
     const currentTime = new Date();
     await Promise.all(
       listings.map(async (listing) => {
-        if (currentTime >= listing.launchDate) {
+        if (listing.launchDate && currentTime >= listing.launchDate) {
           await Listing.findByIdAndUpdate(listing._id, { active: false });
         }
       })
     );
 
-    // Process remaining active listings
-    const activeListings = await Listing.find({ active: true });
+    const activeListings = await Listing.find({
+      $or: [{ active: true }, { launchDate: null }],
+    });
 
     for (const listing of activeListings) {
       console.log(`\nProcessing Twitter user: ${listing.twitterUsername}`);

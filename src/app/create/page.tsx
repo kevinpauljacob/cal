@@ -1,34 +1,30 @@
 "use client";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { RiDeleteBin6Fill } from "react-icons/ri";
 import { FaTwitter, FaCheckCircle } from "react-icons/fa";
-import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
 import { Loader } from "@/components/Loader";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useWallet } from "@solana/wallet-adapter-react";
 
 export type FormValues = {
   twitter: string;
   telegram: string;
-  website: string;
+  website?: string;
   category: string;
   description: string;
-  platform: string;
-  launchDate: string;
+  platform?: string;
+  launchDate?: string;
 };
 
 const categories = [
-  { label: "AI", value: "ai" },
-  { label: "Dog", value: "dog" },
-  { label: "Gaming", value: "gaming" },
-  { label: "Cat", value: "cat" },
+  { label: "Meme", value: "meme" },
+  { label: "Utility", value: "utility" },
 ];
 
 const CreateMindSharePage: React.FC = () => {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -89,7 +85,10 @@ const CreateMindSharePage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const utcLaunchDate = localToUTC(data.launchDate);
+      const utcLaunchDate =
+        data.launchDate && data.launchDate.trim() !== ""
+          ? localToUTC(data.launchDate)
+          : null;
 
       const response = await fetch("/api/create", {
         method: "POST",
@@ -148,7 +147,7 @@ const CreateMindSharePage: React.FC = () => {
             >
               <div>
                 <label className="text-[13px] font-lexend font-medium mb-2 block">
-                  Connect Twitter
+                  Connect Twitter <span className="text-red-400">*</span>
                 </label>
                 <div className="border border-dashed border-white/20 rounded-[10px] p-4 flex-col items-center justify-center">
                   {!session ? (
@@ -186,7 +185,8 @@ const CreateMindSharePage: React.FC = () => {
               </div>
               <div className="flex flex-col w-full">
                 <p className="text-[13px] font-lexend font-medium mb-2 block">
-                  Tell us about your exciting new project! 🚀
+                  Tell us about your exciting new project! 🚀{" "}
+                  <span className="text-red-400">*</span>
                 </p>
                 <textarea
                   autoComplete="new-password"
@@ -214,7 +214,7 @@ const CreateMindSharePage: React.FC = () => {
               </div>
               <div>
                 <label className="text-[13px] font-lexend font-medium mb-2 block">
-                  Select a category
+                  Select a category <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <button
@@ -274,7 +274,7 @@ const CreateMindSharePage: React.FC = () => {
                 <input
                   type="text"
                   placeholder="xcombinator.ai"
-                  className="w-1/2 sm:w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                  className="w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 placeholder-[#94A3B8]/20 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
                   {...register("platform")}
                 />
               </div>
@@ -285,15 +285,15 @@ const CreateMindSharePage: React.FC = () => {
                 <input
                   type="datetime-local"
                   min={getMinDateTime()}
-                  className="w-1/2 sm:w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                  className="w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 placeholder-[#94A3B8]/20 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
                   {...register("launchDate", {
-                    required: "Sale Start Time is required",
+                    required: false, // Changed from required message to false
                     validate: (value) => {
                       if (
                         value &&
                         new Date(value) < new Date(getMinDateTime())
                       ) {
-                        return "Date/time must be in the future.";
+                        return "If provided, date/time must be in the future.";
                       }
                       return true;
                     },
@@ -316,19 +316,20 @@ const CreateMindSharePage: React.FC = () => {
                 <input
                   type="text"
                   placeholder="https://your-awesome-project.com"
-                  className="w-1/2 sm:w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                  className="w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 placeholder-[#94A3B8]/20 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
                   {...register("website")}
                 />
               </div>
 
               <div className="flex flex-col w-full">
                 <p className="text-[13px] font-lexend font-medium mb-2 block">
-                  Personal Telegram Username for Direct Contact 💬
+                  Personal Telegram Username for Direct Contact 💬{" "}
+                  <span className="text-red-400">*</span>
                 </p>
                 <input
                   type="text"
                   placeholder="@username (without the @)"
-                  className="w-1/2 sm:w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                  className="w-full px-4 py-2 border border-gray-800 rounded-lg text-gray-300 placeholder-[#94A3B8]/20 bg-[#94A3B8]/5 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
                   {...register("telegram", {
                     required: "We need your Telegram to keep you updated!",
                     pattern: {

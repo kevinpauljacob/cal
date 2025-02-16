@@ -104,22 +104,53 @@ export async function GET(request: Request) {
       },
       {
         $addFields: {
-          hasMindshare: { $gt: ["$mindshare.metrics.24h.score", 0] },
+          // For launch date sorting
+          ...(sortField === "launchDate"
+            ? {
+                hasLaunchDate: { $ne: ["$launchDate", null] },
+              }
+            : {
+                // For other fields, we'll use this to push zeros to the end
+                hasNonZeroValue: {
+                  $cond: [
+                    {
+                      $gt: [
+                        {
+                          $abs: {
+                            $ifNull: ["$" + VALID_SORT_FIELDS[sortField], 0],
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              }),
         },
       },
     ];
 
-    // Add sort stages
-    pipeline.push({
-      $sort: {
-        // First sort by whether they have mindshare (pushes 0 scores to end)
-        hasMindshare: -1,
-        // Then apply the requested sort
-        [VALID_SORT_FIELDS[sortField]]: sortOrder === "desc" ? -1 : 1,
-        // For items with same sort value, use launch date as tiebreaker
-        launchDate: 1,
-      },
-    });
+    // Construct sort stage based on sort field
+    const sortStage: PipelineStage = {
+      $sort:
+        sortField === "launchDate"
+          ? {
+              // For launchDate sorting:
+              // In ASC: hasLaunchDate: -1 puts listings WITH dates first
+              // In DESC: hasLaunchDate: 1 puts listings WITHOUT dates first
+              hasLaunchDate: sortOrder === "asc" ? -1 : 1,
+              [VALID_SORT_FIELDS[sortField]]: sortOrder === "desc" ? -1 : 1,
+            }
+          : {
+              // For other fields, push zeros to the end regardless of sort order
+              hasNonZeroValue: -1, // Non-zero values (1) come before zero values (0)
+              [VALID_SORT_FIELDS[sortField]]: sortOrder === "desc" ? -1 : 1,
+            },
+    };
+
+    pipeline.push(sortStage);
 
     pipeline.push(
       {

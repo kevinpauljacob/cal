@@ -113,8 +113,8 @@ export type ListingResponse = {
   platform?: string;
   website?: string;
   followers: number;
-  category: "ai" | "gaming" | "dog" | "cat";
-  launchDate: string;
+  category: "meme" | "utility";
+  launchDate?: string;
   engagementRate: number;
   viewsCount: number;
   tweetCount: number;

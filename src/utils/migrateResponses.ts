@@ -13,9 +13,7 @@ interface CsvRow {
 }
 
 // Default values
-const DEFAULT_PUBLIC_KEY = "2w4UMXEK2RH7c9gHQvSXLJG9sCehgnPMZWCrW3CnKFB3";
-const DEFAULT_CATEGORY = "ai";
-const DEFAULT_LAUNCH_DATE = "2025-12-31";
+const DEFAULT_CATEGORY = "utility";
 
 interface UserInfoResponse {
   data: {
@@ -82,8 +80,8 @@ function cleanTelegramUsername(username: string): string {
   return username.trim();
 }
 
-function parseLaunchDate(dateStr: string): Date {
-  if (!dateStr) return new Date(DEFAULT_LAUNCH_DATE);
+function parseLaunchDate(dateStr: string): Date | null {
+  if (!dateStr) return null;
 
   try {
     // Handle the M/D/YYYY format
@@ -92,8 +90,8 @@ function parseLaunchDate(dateStr: string): Date {
       `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
     );
   } catch (error) {
-    console.log(`Error parsing date: ${dateStr}, using default`);
-    return new Date(DEFAULT_LAUNCH_DATE);
+    console.log(`Error parsing date: ${dateStr}, returning null`);
+    return null;
   }
 }
 
@@ -278,6 +276,7 @@ async function processCsvFile(filePath: string) {
           bio: userInfo.data.description,
           followers: userInfo.data.followers,
           category: DEFAULT_CATEGORY,
+          description: userInfo.data.description,
           launchDate: parseLaunchDate(record["Launch Date"]),
           isVerified: userInfo.data.isBlueVerified,
           telegramUserName: telegramUsername || twitterUsername, // Use Twitter username as fallback
